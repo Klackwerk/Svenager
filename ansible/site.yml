@@ -1,0 +1,17 @@
+# Standalone entry point for testing this repository without Svenager.
+# Svenager-managed devices instead receive a generated playbook that pins
+# roles and variables per device group.
+- name: Apply Svenager reference configuration
+  hosts: all
+  become: true
+  roles:
+    - svenager_base
+    - motd_banner
+
+# Opt-in: devices in the "kiosk" inventory group become fullscreen web
+# kiosks (in Svenager, operators assign the kiosk role to a device group).
+- name: Configure kiosk devices
+  hosts: kiosk
+  become: true
+  roles:
+    - kiosk

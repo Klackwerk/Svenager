@@ -1,0 +1,14 @@
+---
+argument_specs:
+  main:
+    short_description: Baseline for Svenager-managed devices
+    description:
+      - Installs the packages every managed device needs to run jobs.
+        The VNC server for remote view is a separate, assignable role
+        (vnc_server).
+    options:
+      svenager_base_packages:
+        type: list
+        elements: str
+        default: [git, ansible-core]
+        description: Packages every managed device needs.

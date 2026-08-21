@@ -1,0 +1,11 @@
+---
+driver:
+  name: docker
+platforms:
+  - name: svenager-debian
+    image: debian:bookworm
+    pre_build_image: false
+provisioner:
+  name: ansible
+verifier:
+  name: ansible

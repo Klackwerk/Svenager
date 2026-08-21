@@ -1,0 +1,55 @@
+# Agent release builds and .deb packaging.
+#
+#   goreleaser check                              # validate this file
+#   goreleaser release --snapshot --clean         # local build, dist/*.deb
+#   goreleaser release --clean                    # tagged release (CI)
+#
+# The produced binaries go to the server's agent-dist directory; sign them
+# there with scripts/agent-update-keys.sh so devices accept self-updates.
+version: 2
+project_name: svenager-agent
+
+builds:
+  - main: ./cmd/svenager-agent
+    binary: svenager-agent
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
+nfpms:
+  - package_name: svenager-agent
+    vendor: Klackwerk
+    homepage: https://github.com/klackwerk/svenager
+    maintainer: Nils <nils@klackwerk.de>
+    description: Svenager fleet management device agent
+    license: AGPL-3.0-or-later
+    formats:
+      - deb
+    dependencies:
+      - git
+      - ansible
+    contents:
+      - src: packaging/systemd/svenager-agent.service
+        dst: /lib/systemd/system/svenager-agent.service
+    scripts:
+      postinstall: packaging/deb/postinstall.sh
+      preremove: packaging/deb/preremove.sh
+
+archives:
+  - formats:
+      - tar.gz
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-dev"
+
+release:
+  disable: true

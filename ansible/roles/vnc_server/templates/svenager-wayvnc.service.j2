@@ -1,0 +1,18 @@
+[Unit]
+Description=Svenager VNC server (wayvnc, localhost only)
+# Runs inside the user's Wayland session. The compositor session must expose
+# WAYLAND_DISPLAY to the systemd user environment (Raspberry Pi OS does);
+# for bare compositors, "exec wayvnc 127.0.0.1 {{ vnc_server_port }}"
+# in the compositor config is the equivalent.
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+# 127.0.0.1 is the security boundary: the display is only reachable through
+# the Svenager agent's authenticated reverse tunnel, never over the network.
+ExecStart=/usr/bin/wayvnc 127.0.0.1 {{ vnc_server_port }}
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

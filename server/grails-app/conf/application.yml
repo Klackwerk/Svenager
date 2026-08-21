@@ -1,0 +1,193 @@
+---
+info:
+    app:
+        name: '@info.app.name@'
+        version: '@info.app.version@'
+        grailsVersion: '@info.app.grailsVersion@'
+grails:
+    codegen:
+        defaultPackage: de.klackwerk.svenager
+    profile: rest-api
+
+management:
+    endpoints:
+        web:
+            exposure:
+                # Health only — everything else stays off the wire (and the
+                # actuator path additionally requires ADMIN, see SecurityConfig).
+                include: health
+
+spring:
+    flyway:
+        # Schema management for PostgreSQL (dev + production). An empty
+        # database gets the full baseline; a pre-Flyway database is
+        # baselined in place (it must already match V1 — regenerate with
+        # scripts/generate-flyway-baseline.sh after model changes while
+        # pre-beta). The test environment (H2) opts out below.
+        enabled: true
+        baseline-on-migrate: true
+        baseline-version: 1
+
+svenager:
+    # Public base URL devices use to reach this instance — baked into the
+    # enrollment one-liner and the install script. Empty = derive from the
+    # request (X-Forwarded-Proto/-Host aware, so it works behind a proxy).
+    externalUrl: '${SVENAGER_EXTERNAL_URL:}'
+    agent:
+        # Base check-in interval sent to agents; also drives online detection.
+        pollIntervalSeconds: 60
+        # Directory with agent binaries (svenager-agent-linux-<arch>) served
+        # at /install/agent/ for the one-step enrollment command.
+        distDir: agent-dist
+    device:
+        # A device is "online" if it checked in within onlineFactor poll intervals.
+        onlineFactor: 3
+    jobs:
+        # Maximum runtime for a job on a device before it counts as timed out.
+        timeoutSeconds: 1800
+        # Finished jobs (and their logs) older than this are pruned hourly;
+        # 0 keeps everything forever.
+        retentionDays: 90
+    repos:
+        # How often registered repositories are synced in the background;
+        # a changed commit rolls out via the drift check at agent check-in.
+        syncIntervalSeconds: 300
+    remote:
+        # Hard time limit for a remote-view (VNC) session.
+        sessionMaxSeconds: 900
+        # Localhost port the agent pipes the tunnel to on the device.
+        vncPort: 5900
+    sso:
+        # OpenID Connect sign-in. Setup + Authentik/Keycloak examples: docs/sso.md.
+        enabled: '${SVENAGER_SSO_ENABLED:false}'
+        issuerUri: '${SVENAGER_SSO_ISSUER:}'
+        clientId: '${SVENAGER_SSO_CLIENT_ID:svenager}'
+        clientSecret: '${SVENAGER_SSO_CLIENT_SECRET:}'
+        # Label on the login screen's SSO button.
+        label: '${SVENAGER_SSO_LABEL:Single sign-on}'
+        scopes: '${SVENAGER_SSO_SCOPES:openid,profile,email}'
+        # Claim carrying the IdP group names (list or single string).
+        roleClaim: '${SVENAGER_SSO_ROLE_CLAIM:groups}'
+        # Members of this IdP group become Svenager ADMINs automatically.
+        adminGroup: '${SVENAGER_SSO_ADMIN_GROUP:}'
+        # Static claim-value → role map (ADMIN|OPERATOR|VIEWER). Usually the
+        # dynamic mappings on the Users page are more convenient.
+        roleMapping: {}
+        # Role for signed-in users with no mapped group; empty = reject.
+        defaultRole: '${SVENAGER_SSO_DEFAULT_ROLE:}'
+    alerts:
+        # Silence (seconds) before a device counts as offline for alerting;
+        # groups can override this per fleet (e.g. notebooks vs. kiosks).
+        offlineAfterSeconds: 600
+        # Sender address for email alerts; SMTP itself via spring.mail.*.
+        from: svenager@localhost
+    rateLimit:
+        # Requests per minute per client address on the public endpoints;
+        # 0 disables a limit.
+        enrollPerMinute: 10
+        installPerMinute: 30
+        kioskDemoPerMinute: 120
+        # Sign-in attempts per minute, keyed by address + username.
+        loginPerMinute: 10
+        # Agent check-in/event requests per minute, keyed by device id —
+        # generous: one busy job streams many log-chunk events.
+        agentPerMinute: 300
+        # Only honor X-Forwarded-For when a trusted reverse proxy (deploy/)
+        # is in front — the header is caller-controlled otherwise.
+        trustForwardedFor: '${SVENAGER_TRUST_FORWARDED_FOR:false}'
+
+---
+grails:
+    mime:
+        types:
+            json:
+              - application/json
+              - text/json   
+            hal:
+              - application/hal+json
+              - application/hal+xml  
+            xml:
+              - text/xml
+              - application/xml                                 
+            atom: application/atom+xml
+            css: text/css
+            csv: text/csv
+            js: text/javascript
+            rss: application/rss+xml
+            text: text/plain
+            all: '*/*'            
+
+---
+hibernate:
+    cache:
+        queries: false
+        use_second_level_cache: false
+        use_query_cache: false
+dataSource:
+    pooled: true
+    jmxExport: true
+    driverClassName: org.h2.Driver
+    username: sa
+    password: ''
+
+environments:
+    development:
+        dataSource:
+            # Local PostgreSQL so dev matches production and data survives
+            # restarts. Override via SVENAGER_DB_* env vars if yours differs.
+            # Schema comes from Flyway; the override exists only for the
+            # baseline-generation script.
+            dbCreate: '${SVENAGER_DB_CREATE:none}'
+            driverClassName: org.postgresql.Driver
+            dialect: org.hibernate.dialect.PostgreSQLDialect
+            url: '${SVENAGER_DB_URL:jdbc:postgresql://localhost:5432/svenager}'
+            username: '${SVENAGER_DB_USER:svenager}'
+            password: '${SVENAGER_DB_PASSWORD:svenager}'
+    test:
+        # Tests run on in-memory H2 with Hibernate DDL; the Flyway baseline
+        # is PostgreSQL-only.
+        spring:
+            flyway:
+                enabled: false
+        dataSource:
+            dbCreate: update
+            url: jdbc:h2:mem:testDb;LOCK_TIMEOUT=10000;DB_CLOSE_ON_EXIT=FALSE
+        svenager:
+            repos:
+                dir: build/test-repos
+            agent:
+                distDir: build/test-agent-dist
+            # The integration suite hammers the public endpoints from one
+            # address by design; throttling is unit-tested separately.
+            rateLimit:
+                enrollPerMinute: 0
+                installPerMinute: 0
+                kioskDemoPerMinute: 0
+                loginPerMinute: 0
+                agentPerMinute: 0
+    production:
+        dataSource:
+            dbCreate: none
+            driverClassName: org.postgresql.Driver
+            dialect: org.hibernate.dialect.PostgreSQLDialect
+            url: '${SVENAGER_DB_URL:jdbc:postgresql://localhost:5432/svenager}'
+            username: '${SVENAGER_DB_USER:svenager}'
+            password: '${SVENAGER_DB_PASSWORD:}'
+            properties:
+                jmxEnabled: true
+                initialSize: 5
+                maxActive: 50
+                minIdle: 5
+                maxIdle: 25
+                maxWait: 10000
+                maxAge: 600000
+                timeBetweenEvictionRunsMillis: 5000
+                minEvictableIdleTimeMillis: 60000
+                validationQuery: SELECT 1
+                validationQueryTimeout: 3
+                validationInterval: 15000
+                testOnBorrow: true
+                testWhileIdle: true
+                testOnReturn: false
+                jdbcInterceptors: ConnectionState
+                defaultTransactionIsolation: 2 # TRANSACTION_READ_COMMITTED

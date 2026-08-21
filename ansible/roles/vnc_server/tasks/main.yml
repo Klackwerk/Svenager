@@ -1,0 +1,68 @@
+---
+- name: Install wayvnc (Wayland)
+  ansible.builtin.apt:
+    name: wayvnc
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  when: vnc_server_backend == 'wayvnc'
+
+- name: Install localhost-bound wayvnc user unit
+  ansible.builtin.template:
+    src: svenager-wayvnc.service.j2
+    dest: /etc/systemd/user/svenager-wayvnc.service
+    owner: root
+    group: root
+    mode: "0644"
+  when:
+    - vnc_server_backend == 'wayvnc'
+    - ansible_service_mgr == 'systemd'
+
+- name: Enable wayvnc for all graphical sessions
+  ansible.builtin.systemd:
+    name: svenager-wayvnc
+    enabled: true
+    scope: global
+    daemon_reload: true
+  when:
+    - vnc_server_backend == 'wayvnc'
+    - ansible_service_mgr == 'systemd'
+
+- name: Install x11vnc (X11)
+  ansible.builtin.apt:
+    name: x11vnc
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  when: vnc_server_backend == 'x11vnc'
+
+- name: Install localhost-bound x11vnc systemd unit
+  ansible.builtin.template:
+    src: x11vnc.service.j2
+    dest: /etc/systemd/system/svenager-vnc.service
+    owner: root
+    group: root
+    mode: "0644"
+  when:
+    - vnc_server_backend == 'x11vnc'
+    - ansible_service_mgr == 'systemd'
+  notify: Restart svenager-vnc
+
+- name: Enable x11vnc service
+  ansible.builtin.systemd:
+    name: svenager-vnc
+    enabled: true
+    daemon_reload: true
+  when:
+    - vnc_server_backend == 'x11vnc'
+    - ansible_service_mgr == 'systemd'
+
+- name: Retire the x11vnc unit when another backend is active
+  ansible.builtin.systemd:
+    name: svenager-vnc
+    enabled: false
+    state: stopped
+  failed_when: false
+  when:
+    - vnc_server_backend != 'x11vnc'
+    - ansible_service_mgr == 'systemd'

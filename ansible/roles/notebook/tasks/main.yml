@@ -1,0 +1,33 @@
+---
+- name: Install power management
+  ansible.builtin.apt:
+    name:
+      - tlp
+      - tlp-rdw
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Enable TLP
+  ansible.builtin.systemd:
+    name: tlp
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: ansible_service_mgr == 'systemd'
+
+- name: Install compressed swap (zram)
+  ansible.builtin.apt:
+    name: zram-tools
+    state: present
+  when: notebook_zram
+
+- name: Enable compressed swap
+  ansible.builtin.systemd:
+    name: zramswap
+    enabled: true
+    state: started
+    daemon_reload: true
+  when:
+    - notebook_zram
+    - ansible_service_mgr == 'systemd'

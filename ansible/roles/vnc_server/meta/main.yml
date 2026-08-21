@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  role_name: vnc_server
+  author: svenager
+  description: >-
+    Localhost-bound VNC server for the Svenager remote view — wayvnc for
+    Wayland/wlroots desktops (Raspberry Pi OS default), x11vnc for X11
+    sessions. Assign it to groups whose screens operators should be able
+    to view; the kiosk role brings its own VNC server.
+  license: AGPL-3.0-or-later
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+dependencies: []

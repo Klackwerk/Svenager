@@ -1,0 +1,24 @@
+[Unit]
+Description=Svenager device agent
+Documentation=https://github.com/klackwerk/svenager
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/svenager-agent run
+Restart=on-failure
+RestartSec=10
+# The agent pings at half this interval; a hung process gets restarted.
+WatchdogSec=90
+# Applying system configuration via Ansible requires root, but lock the
+# process down where we can.
+NoNewPrivileges=no
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+StateDirectory=svenager
+ConfigurationDirectory=svenager
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,12 @@
+---
+argument_specs:
+  main:
+    short_description: Notebook
+    description:
+      - Power and memory optimizations for laptop devices — TLP battery
+        management and optional compressed swap (zram).
+    options:
+      notebook_zram:
+        type: bool
+        default: true
+        description: Enable compressed swap (zram) for better responsiveness.

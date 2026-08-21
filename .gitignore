@@ -1,0 +1,25 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# macOS
+.DS_Store
+
+# Grails / Gradle
+server/.gradle/
+server/build/
+server/prodDb*
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Go
+agent/dist/
+agent/svenager-agent
+
+# Local environment
+.env
+*.local
+server/agent-dist/

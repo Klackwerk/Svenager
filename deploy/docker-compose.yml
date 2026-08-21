@@ -1,0 +1,29 @@
+# Development environment: PostgreSQL for the Grails server.
+#
+# The server expects PostgreSQL on localhost:5432 with database/user/password
+# `svenager` in development (override via SVENAGER_DB_URL / SVENAGER_DB_USER /
+# SVENAGER_DB_PASSWORD). If you don't have a local PostgreSQL, start this one:
+#
+#   docker compose up -d
+#
+# Full production images (server, frontend/nginx, reverse proxy with TLS)
+# are planned for milestone M7 (see docs/roadmap.md).
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: svenager
+      POSTGRES_USER: svenager
+      POSTGRES_PASSWORD: svenager
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U svenager"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:

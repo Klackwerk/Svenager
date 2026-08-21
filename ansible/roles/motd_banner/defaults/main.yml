@@ -1,0 +1,6 @@
+---
+# The Svenager instance this device reports to; the agent injects
+# svenager_server_url automatically with every job.
+motd_banner_url: "{{ svenager_server_url | default('') }}"
+# Optional extra line under the banner (site contact, asset tag, …).
+motd_banner_extra: ""

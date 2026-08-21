@@ -1,0 +1,8 @@
+# TLS terminator and router: API (incl. websockets for remote view and
+# agent tunnels) to the server, everything else to the SPA.
+{$SVENAGER_DOMAIN} {
+	@backend path /api/* /install.sh /install/* /kiosk-demo/* /actuator/health
+	reverse_proxy @backend server:8080
+
+	reverse_proxy frontend:80
+}

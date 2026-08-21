@@ -1,0 +1,35 @@
+# Svenager repository manifest (optional, but recommended).
+# Curates how roles appear to non-technical users in the Svenager UI.
+roles:
+  svenager_base:
+    display_name: "Base configuration"
+    description: "Baseline every managed device gets: the packages required to run jobs."
+    # Applied automatically as the first role on every device that uses this
+    # repository — not something operators assign by hand.
+    user_assignable: false
+    base: true
+  vnc_server:
+    display_name: "Remote view (VNC server)"
+    description: >-
+      Localhost-bound VNC server so operators can open a remote view of the
+      device's screen. Not needed for kiosk devices — the kiosk role brings
+      its own.
+  motd_banner:
+    display_name: "Enrollment banner"
+    description: "Console banner telling anyone at the device that it is enrolled in Svenager, including the instance URL."
+    # Also applied automatically on every device.
+    user_assignable: false
+    base: true
+  kde_desktop:
+    display_name: "KDE Desktop"
+    description: "Full desktop for Debian 13 workstations, Windows-familiar defaults, OnlyOffice as the default office suite."
+  notebook:
+    display_name: "Notebook"
+    description: "Laptop optimizations: TLP battery management and compressed swap."
+  kiosk:
+    display_name: "Web kiosk"
+    description: >-
+      Boots the device into a fullscreen browser. Shows a local status page
+      by default (works even when server/network are down); set kiosk_url
+      for your own content. Assign deliberately — it takes over the display
+      (meant for Raspberry Pi OS Lite).

@@ -1,0 +1,5 @@
+build
+logs
+agent-dist
+.gradle
+Dockerfile

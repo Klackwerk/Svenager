@@ -1,0 +1,4 @@
+---
+# Microsoft core fonts improve document fidelity but live in Debian's
+# contrib section — enable only when the device's apt sources include it.
+kde_desktop_ms_fonts: false

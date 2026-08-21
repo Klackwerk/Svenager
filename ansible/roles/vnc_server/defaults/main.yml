@@ -1,0 +1,5 @@
+---
+# wayvnc serves Wayland/wlroots desktops (the Raspberry Pi OS Bookworm
+# default, labwc/wayfire); x11vnc serves classic X11 sessions.
+vnc_server_backend: wayvnc
+vnc_server_port: 5900

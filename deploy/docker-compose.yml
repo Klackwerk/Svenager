@@ -1,0 +1,75 @@
+# Production stack: PostgreSQL, server, SPA and a TLS reverse proxy
+# (Caddy fetches Let's Encrypt certificates automatically).
+#
+# Runs the release images from ghcr.io/klackwerk/svenager by default:
+#
+#   cp .env.example .env   # fill in domain + secrets
+#   docker compose up -d
+#
+# To build from source instead: docker compose up -d --build
+#
+# Startup guide: ../docs/quickstart.md — operations: ../docs/operations.md
+# Development database only: docker-compose.dev.yml
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: svenager
+      POSTGRES_USER: svenager
+      POSTGRES_PASSWORD: ${SVENAGER_DB_PASSWORD:?set SVENAGER_DB_PASSWORD in .env}
+    volumes:
+      - svenager-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U svenager -d svenager"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  server:
+    image: ghcr.io/klackwerk/svenager/server:${SVENAGER_VERSION:-latest}
+    build: ../server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      GRAILS_ENV: production
+      SVENAGER_DB_URL: jdbc:postgresql://postgres:5432/svenager
+      SVENAGER_DB_USER: svenager
+      SVENAGER_DB_PASSWORD: ${SVENAGER_DB_PASSWORD:?}
+      # base64-encoded 32 bytes; encrypts secrets at rest. Losing it loses
+      # stored secrets/deploy keys — back it up.
+      SVENAGER_ENCRYPTION_KEY: ${SVENAGER_ENCRYPTION_KEY:?set SVENAGER_ENCRYPTION_KEY in .env}
+      # Optional: fixed initial admin password (otherwise generated + logged
+      # once at first start).
+      SVENAGER_ADMIN_PASSWORD: ${SVENAGER_ADMIN_PASSWORD:-}
+      SVENAGER_EXTERNAL_URL: https://${SVENAGER_DOMAIN:?set SVENAGER_DOMAIN in .env}
+      # Caddy is a trusted proxy in front, so X-Forwarded-For is honest.
+      SVENAGER_TRUST_FORWARDED_FOR: 'true'
+    volumes:
+      # Repo checkouts, generated dev keys and the agent-dist directory
+      # (put signed agent binaries into svenager-data/agent-dist).
+      - svenager-data:/var/lib/svenager
+
+  frontend:
+    image: ghcr.io/klackwerk/svenager/frontend:${SVENAGER_VERSION:-latest}
+    build: ../frontend
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SVENAGER_DOMAIN: ${SVENAGER_DOMAIN:?}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - svenager-caddy:/data
+
+volumes:
+  svenager-db:
+  svenager-data:
+  svenager-caddy:

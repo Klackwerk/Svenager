@@ -1,0 +1,88 @@
+# Quick start
+
+From zero to a running Svenager instance with an enrolled device, using the
+release images from `ghcr.io/klackwerk/svenager`. Day-2 topics (backups,
+upgrades, monitoring) live in [operations.md](operations.md); development
+setup in the [README](../README.md).
+
+## What you need
+
+- A Linux host with Docker and the compose plugin (`docker compose version`).
+- A domain that resolves to that host, with ports **80** and **443**
+  reachable from the internet — Caddy obtains the Let's Encrypt certificate
+  automatically.
+- One or more Debian/Raspberry Pi OS devices to manage (can come later).
+
+## 1. Start the stack
+
+```sh
+git clone https://github.com/Klackwerk/Svenager.git
+cd Svenager/deploy
+cp .env.example .env      # set SVENAGER_DOMAIN, SVENAGER_DB_PASSWORD,
+                          # SVENAGER_ENCRYPTION_KEY (openssl rand -base64 32)
+docker compose up -d
+```
+
+This pulls the latest release images (pin a version with `SVENAGER_VERSION`
+in `.env`) and starts PostgreSQL, the API server, the web UI and the TLS
+proxy. First startup takes a moment while Flyway creates the schema.
+
+> **Back up `SVENAGER_ENCRYPTION_KEY`.** It encrypts stored secrets and
+> repository deploy keys at rest — without it they are unrecoverable.
+
+## 2. Sign in
+
+Open `https://<your-domain>`. If you didn't set `SVENAGER_ADMIN_PASSWORD`
+in `.env`, the initial `admin` password was generated and logged **once**:
+
+```sh
+docker compose logs server | grep "generated password"
+```
+
+Change it after the first sign-in (or connect SSO later, see
+[sso.md](sso.md)).
+
+## 3. Host agent binaries
+
+The enrollment one-liner and agent self-update download the agent from your
+instance. Put the release binaries into the server's `agent-dist` directory
+(the `svenager-data` volume):
+
+1. Download the `svenager-agent_*_linux_{amd64,arm64}.tar.gz` archives from
+   the [GitHub release](https://github.com/Klackwerk/Svenager/releases) and
+   extract each `svenager-agent` binary as
+   `svenager-agent-linux-<arch>` (e.g. `svenager-agent-linux-arm64`).
+2. Sign them — devices refuse unsigned self-updates
+   (`scripts/agent-update-keys.sh gen` once, keep the private key offline;
+   then `scripts/agent-update-keys.sh sign <key> <dir>`).
+3. Copy binaries and `.sig` files into the volume:
+
+```sh
+docker compose cp ./agent-dist/. server:/var/lib/svenager/agent-dist/
+```
+
+Details: "Agent distribution and self-update" in
+[operations.md](operations.md).
+
+## 4. Register an Ansible repository
+
+Under **Ansible sources**, register the git repository that holds your
+roles and playbooks (deploy key supported for private repos). The bundled
+[`ansible/`](../ansible) directory documents the expected repo convention
+and works as a starting point. The server analyzes roles and argument specs
+and turns them into forms and role cards in the UI.
+
+## 5. Enroll a device
+
+Create a token on the **Enrollment** page and paste the shown one-liner on
+a Debian/Raspberry Pi OS machine — it downloads the agent from your
+instance, installs the systemd service and enrolls. The device appears on
+the dashboard, checks in periodically over outbound HTTPS and applies its
+assigned configuration with Ansible running locally.
+
+## Where to go next
+
+- Assign groups, variables and roles to devices in the web UI.
+- Remote view: browser-based VNC through an audited reverse tunnel.
+- [operations.md](operations.md) — backups, upgrades, monitoring, alerting.
+- [architecture.md](architecture.md) — how the pieces fit together.

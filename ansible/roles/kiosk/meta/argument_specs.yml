@@ -1,0 +1,47 @@
+---
+argument_specs:
+  main:
+    short_description: Web kiosk
+    description:
+      - Boots the device straight into a fullscreen browser (sway + cog)
+        showing one URL, e.g. a dashboard or signage page. Includes a
+        localhost-bound VNC server so the screen stays reachable — and
+        controllable — through the Svenager remote view. Meant for console
+        images (Raspberry Pi OS Lite) — it takes over the display.
+    options:
+      kiosk_url:
+        type: str
+        description:
+          - The page shown fullscreen. Defaults to a status page stored on
+            the device itself, which keeps working when the server is down
+            and shows "server reachable" and "internet reachable" flags.
+            Set any http(s) URL to show something else.
+      kiosk_connectivity_url:
+        type: str
+        default: "http://detectportal.firefox.com/success.txt"
+        description:
+          - Endpoint the local status page uses to tell a Svenager outage
+            apart from a device network outage.
+      kiosk_user:
+        type: str
+        default: kiosk
+        description: Unprivileged user the kiosk session runs as.
+      kiosk_vnc_port:
+        type: int
+        default: 5900
+        description: Localhost port for the remote-view VNC server.
+      kiosk_compositor:
+        type: str
+        default: sway
+        choices: [sway, cage]
+        description:
+          - Wayland compositor for the session. sway supports remote
+            input through the Svenager remote view; cage is a watch-only
+            fallback (it lacks the virtual input protocols).
+      kiosk_software_rendering:
+        type: bool
+        default: false
+        description:
+          - Compose the screen in software. Enable for virtual machines,
+            whose emulated GPUs flash white frames under GL compositing;
+            keep off on real devices.

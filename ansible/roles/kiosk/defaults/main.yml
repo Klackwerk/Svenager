@@ -1,0 +1,25 @@
+---
+# What the kiosk shows fullscreen. The default is a status page stored ON
+# the device, so the screen keeps working (and explains itself) when the
+# Svenager server or the whole network is down. Set any http(s) URL to show
+# something else instead.
+kiosk_url: "file:///usr/local/share/svenager-kiosk/index.html"
+
+# Well-known endpoint used by the local page to tell "server down" apart
+# from "network down".
+kiosk_connectivity_url: "http://detectportal.firefox.com/success.txt"
+
+kiosk_user: kiosk
+kiosk_vnc_port: 5900
+
+# Wayland compositor the kiosk session runs in. sway (wlroots, packaged in
+# Debian 12/13 and Raspberry Pi OS, wayvnc's reference compositor)
+# implements the virtual pointer/keyboard protocols, so the Svenager remote
+# view can control the screen. cage stays available as a watch-only
+# fallback (no virtual input support).
+kiosk_compositor: sway
+
+# Compose in software instead of GL. Turn on for virtual machines —
+# virtualized GPUs (virtio/virgl) glitch white frames under GL compositing.
+# Leave off on real devices (Raspberry Pi has proper GL).
+kiosk_software_rendering: false

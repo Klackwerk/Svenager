@@ -1,0 +1,77 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            url = 'https://repo.grails.org/grails/restricted'
+        }
+    }
+    dependencies {
+        classpath platform("org.apache.grails:grails-bom:$grailsVersion")
+        classpath "org.apache.grails:grails-gradle-plugins"
+        classpath "org.apache.grails:grails-data-hibernate5"
+    }
+}
+
+version = "0.9.0"
+group = "de.klackwerk"
+
+apply plugin:"eclipse"
+apply plugin:"idea"
+apply plugin:"war"
+apply plugin:"org.apache.grails.gradle.grails-web"
+apply plugin:"org.apache.grails.gradle.grails-gson"
+
+repositories {
+    mavenCentral()
+    maven {
+        url = 'https://repo.grails.org/grails/restricted'
+    }
+}
+
+dependencies {
+    console "org.apache.grails:grails-console"
+    developmentOnly "org.springframework.boot:spring-boot-devtools"
+    implementation platform("org.apache.grails:grails-bom:$grailsVersion")
+    implementation "org.springframework.boot:spring-boot-starter-logging"
+    implementation "org.springframework.boot:spring-boot-starter-validation"
+    implementation "org.springframework.boot:spring-boot-starter-security"
+    implementation "org.springframework.boot:spring-boot-starter-mail"
+    implementation "org.springframework.boot:spring-boot-starter-oauth2-client"
+    implementation "org.flywaydb:flyway-core"
+    implementation "org.flywaydb:flyway-database-postgresql"
+    implementation "org.yaml:snakeyaml"
+    implementation "org.springframework.boot:spring-boot-autoconfigure"
+    implementation "org.springframework.boot:spring-boot-starter"
+    implementation "org.apache.grails:grails-core"
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
+    implementation "org.springframework.boot:spring-boot-starter-tomcat"
+    // Tunnel broker (remote view): plain WebSocket handlers on embedded Tomcat.
+    implementation "org.springframework:spring-websocket"
+    implementation "org.apache.grails:grails-url-mappings"
+    implementation "org.apache.grails:grails-rest-transforms"
+    implementation "org.apache.grails:grails-interceptors"
+    implementation "org.apache.grails:grails-services"
+    implementation "org.apache.grails:grails-databinding"
+    implementation "org.apache.grails:grails-web-boot"
+    implementation "org.apache.grails:grails-logging"
+    implementation "org.apache.grails:grails-data-hibernate5"
+    implementation "org.apache.grails:grails-views-gson"
+    implementation "org.apache.grails:grails-data-mongodb-gson-templates"
+    profile "org.apache.grails.profiles:rest-api"
+    runtimeOnly "org.fusesource.jansi:jansi"
+    runtimeOnly "com.h2database:h2"
+    runtimeOnly "org.postgresql:postgresql"
+    runtimeOnly "com.zaxxer:HikariCP"
+    testImplementation "org.apache.grails:grails-testing-support-datamapping"
+    testImplementation "org.apache.grails:grails-testing-support-web"
+    testImplementation "org.spockframework:spock-core"
+    testImplementation "org.apache.grails:grails-testing-support-views-gson"
+    integrationTestImplementation "org.apache.grails:grails-testing-support-web"
+}
+
+compileJava.options.release = 17
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+}
+

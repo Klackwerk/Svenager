@@ -1,0 +1,13 @@
+[Unit]
+Description=Svenager VNC server (localhost only)
+After=display-manager.service
+
+[Service]
+# -localhost is the security boundary: the display is only reachable through
+# the Svenager agent's authenticated reverse tunnel, never over the network.
+ExecStart=/usr/bin/x11vnc -localhost -rfbport {{ vnc_server_port }} -display :0 -auth guess -forever -shared -nopw
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

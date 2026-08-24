@@ -1,7 +1,0 @@
----
-- name: Restart svenager-vnc
-  ansible.builtin.systemd:
-    name: svenager-vnc
-    state: restarted
-    daemon_reload: true
-  when: ansible_service_mgr == 'systemd'

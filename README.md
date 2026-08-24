@@ -17,7 +17,7 @@ for non-professionals.
 | `server/`   | Core REST API — [Apache Grails 7](https://grails.apache.org) (Java 17+, PostgreSQL) |
 | `frontend/` | Web UI — Vite + React + TypeScript + Bootstrap 5 |
 | `agent/`    | Device agent — Go static binary, runs as a systemd service |
-| `ansible/`  | Reference Ansible repository (documents the repo convention, independently testable) |
+| `ansible/`  | Reference Ansible repository — submodule of [Klackwerk/ansible-svenager](https://github.com/Klackwerk/ansible-svenager) |
 | `deploy/`   | Docker Compose and deployment examples |
 | `docs/`     | Architecture, agent protocol, Ansible repo convention |
 
@@ -61,7 +61,9 @@ and monitoring: [docs/operations.md](docs/operations.md).
 
 Prerequisites: **Java 17** (Gradle/Grails require it — set `JAVA_HOME`
 accordingly), Node 20+, Go 1.26+, git. Docker only if you don't already run
-PostgreSQL.
+PostgreSQL. Clone with `git clone --recurse-submodules` (or run
+`git submodule update --init` afterwards) — the reference Ansible repository
+lives in the `ansible/` submodule.
 
 ### 1. Database (PostgreSQL)
 
@@ -113,17 +115,17 @@ server proxies `/api` (including the remote-view WebSocket) to
 ### 5. Ansible repository for testing
 
 Register any git URL under *Ansible sources* — for local development a bare
-clone of the bundled reference repo works well:
+clone of the reference repo (the `ansible/` submodule) works well:
 
 ```bash
 git init --bare ~/.svenager-dev/ansible-config.git
-git -C ansible init && git -C ansible add -A && git -C ansible commit -m init   # once
-git -C ansible push ~/.svenager-dev/ansible-config.git main
+git -C ansible push ~/.svenager-dev/ansible-config.git HEAD:main
 ```
 
 Register `file:///Users/<you>/.svenager-dev/ansible-config.git` in the UI.
-Push further changes there — the scheduled sync plus the check-in drift
-detection roll them out to devices automatically.
+Commit further changes in `ansible/` and push them there — the scheduled
+sync plus the check-in drift detection roll them out to devices
+automatically.
 
 ### 6. Enroll a device
 

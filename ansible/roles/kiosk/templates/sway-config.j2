@@ -1,9 +1,0 @@
-# Svenager kiosk session. Locked down: no keybindings are defined, so an
-# attached keyboard cannot reach the compositor — every key goes to the
-# fullscreen browser. wlroots virtual input keeps the remote view usable.
-xwayland disable
-default_border none
-output * bg #000000 solid_color
-seat * hide_cursor 8000
-for_window [app_id=".*"] fullscreen enable
-exec /usr/local/bin/kiosk-session.sh

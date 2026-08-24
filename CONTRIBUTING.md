@@ -5,7 +5,9 @@ Thanks for your interest! Svenager is a monorepo:
 - `server/` — Apache Grails 7 REST API (Java 17+, Groovy, Spock tests)
 - `frontend/` — Vite + React + TypeScript + Bootstrap 5
 - `agent/` — Go device agent
-- `ansible/` — reference Ansible repository (ansible-lint + molecule)
+- `ansible/` — reference Ansible repository, submodule of
+  [Klackwerk/ansible-svenager](https://github.com/Klackwerk/ansible-svenager)
+  (ansible-lint + molecule, CI runs there)
 
 ## Development setup
 

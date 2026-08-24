@@ -1,3 +1,0 @@
----
-# Compressed swap keeps low-memory notebooks responsive.
-notebook_zram: true

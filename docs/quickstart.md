@@ -67,10 +67,11 @@ Details: "Agent distribution and self-update" in
 ## 4. Register an Ansible repository
 
 Under **Ansible sources**, register the git repository that holds your
-roles and playbooks (deploy key supported for private repos). The bundled
-[`ansible/`](../ansible) directory documents the expected repo convention
-and works as a starting point. The server analyzes roles and argument specs
-and turns them into forms and role cards in the UI.
+roles and playbooks (deploy key supported for private repos). The reference
+repository [Klackwerk/ansible-svenager](https://github.com/Klackwerk/ansible-svenager)
+documents the expected repo convention and can be registered directly as a
+starting point. The server analyzes roles and argument specs and turns them
+into forms and role cards in the UI.
 
 ## 5. Enroll a device
 

@@ -1,4 +1,0 @@
----
-svenager_base_packages:
-  - git
-  - ansible-core

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- First startup registers the reference Ansible repository
+  ([Klackwerk/ansible-svenager](https://github.com/Klackwerk/ansible-svenager))
+  as a default source, so a new instance has assignable roles out of the
+  box. Override the URL with `SVENAGER_DEFAULT_ANSIBLE_REPO` (empty
+  disables seeding); delete it in the UI if unwanted.
+- The reference Ansible repository moved to its own repo and is embedded
+  as the `ansible/` submodule.
+
 ## 0.9.0 — 2026-08-21
 
 First public release of Svenager: fleet management for Linux clients and

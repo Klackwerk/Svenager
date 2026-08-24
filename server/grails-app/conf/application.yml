@@ -52,6 +52,10 @@ svenager:
         # How often registered repositories are synced in the background;
         # a changed commit rolls out via the drift check at agent check-in.
         syncIntervalSeconds: 300
+        # Registered as an Ansible source on first startup (empty database)
+        # so a new instance has assignable roles out of the box; delete it
+        # in the UI if unwanted. Empty = seed nothing.
+        defaultUrl: '${SVENAGER_DEFAULT_ANSIBLE_REPO:https://github.com/Klackwerk/ansible-svenager.git}'
     remote:
         # Hard time limit for a remote-view (VNC) session.
         sessionMaxSeconds: 900
@@ -155,6 +159,8 @@ environments:
         svenager:
             repos:
                 dir: build/test-repos
+                # No default source in tests — specs control repositories.
+                defaultUrl: ''
             agent:
                 distDir: build/test-agent-dist
             # The integration suite hammers the public endpoints from one

@@ -76,8 +76,9 @@ into forms and role cards in the UI.
 ## 5. Enroll a device
 
 Create a token on the **Enrollment** page and paste the shown one-liner on
-a Debian/Raspberry Pi OS machine — it downloads the agent from your
-instance, installs the systemd service and enrolls. The device appears on
+a Debian/Raspberry Pi OS machine — it installs `git` and `ansible-core`
+if missing, downloads the agent from your instance, installs the systemd
+service and enrolls. The device appears on
 the dashboard, checks in periodically over outbound HTTPS and applies its
 assigned configuration with Ansible running locally.
 

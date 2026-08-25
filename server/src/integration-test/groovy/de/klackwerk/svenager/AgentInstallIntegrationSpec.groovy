@@ -27,6 +27,10 @@ class AgentInstallIntegrationSpec extends Specification {
         script.contains('/install/agent/linux-$ARCH')
         script.contains('svenager-agent enroll')
         script.contains('systemctl enable --now svenager-agent')
+
+        and: 'it installs what the agent shells out to on a bare Debian'
+        script.contains('command -v ansible-playbook')
+        script.contains('apt-get install -y -qq --no-install-recommends git ansible-core')
     }
 
     void "behind a reverse proxy the script uses the forwarded origin"() {

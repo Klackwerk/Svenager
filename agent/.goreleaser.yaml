@@ -33,7 +33,7 @@ nfpms:
       - deb
     dependencies:
       - git
-      - ansible
+      - ansible-core | ansible
     contents:
       - src: packaging/systemd/svenager-agent.service
         dst: /lib/systemd/system/svenager-agent.service

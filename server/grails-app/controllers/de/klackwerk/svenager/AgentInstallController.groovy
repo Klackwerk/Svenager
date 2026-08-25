@@ -6,7 +6,9 @@ import jakarta.servlet.http.HttpServletRequest
 
 /**
  * Self-hosted agent distribution: a POSIX install script plus the agent
- * binaries, so a device is enrolled with a single copyable command. Both
+ * binaries, so a bare Debian is enrolled with a single copyable command —
+ * the script also installs git and ansible-core, which the agent shells
+ * out to. Both
  * endpoints are public — the enrollment token is the only secret, and it
  * lives solely in the operator's command line.
  */
@@ -97,6 +99,18 @@ case "$(uname -m)" in
   armv6l)  ARCH=armv6 ;;
   *) echo "unsupported architecture: $(uname -m)" >&2; exit 1 ;;
 esac
+
+# The agent shells out to git and ansible-playbook; a fresh Debian has neither.
+if ! command -v ansible-playbook >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1; then
+  command -v apt-get >/dev/null 2>&1 || {
+    echo "git and ansible-playbook are required; install them and re-run" >&2; exit 1; }
+  echo "Installing prerequisites (git, ansible-core) ..."
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -qq
+  # Older Debian/Raspberry Pi OS releases only ship the ansible metapackage.
+  apt-get install -y -qq --no-install-recommends git ansible-core \
+    || apt-get install -y -qq --no-install-recommends git ansible
+fi
 
 echo "Downloading svenager-agent (linux-$ARCH) from $SERVER ..."
 curl -fsSL "$SERVER/install/agent/linux-$ARCH" -o /usr/local/bin/svenager-agent.tmp

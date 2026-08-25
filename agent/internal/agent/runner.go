@@ -183,6 +183,11 @@ func runPlaybook(ctx context.Context, playDir string, reporter *eventReporter, c
 	if checkMode {
 		args = append(args, "--check")
 	}
+	if _, err := exec.LookPath(ansiblePlaybookCommand); err != nil {
+		reporter.log("ansible-playbook not found: install it on the device, " +
+			"e.g. apt-get install -y git ansible-core (" + err.Error() + ")\n")
+		return 1
+	}
 	cmd := exec.CommandContext(ctx, ansiblePlaybookCommand, args...)
 	cmd.Dir = playDir
 	cmd.Env = append(os.Environ(), "ANSIBLE_FORCE_COLOR=0", "ANSIBLE_NOCOWS=1")

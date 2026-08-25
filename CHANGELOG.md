@@ -2,32 +2,15 @@
 
 ## 0.10.1 — 2026-08-25
 
-- Fix: `SVENAGER_ENCRYPTION_KEY` was never bound to the setting
-  `CryptoService` reads, so production instances failed with "No
-  encryption key configured" (HTTP 500) as soon as a repository
-  credential or secret variable was stored — even with the variable set.
-  Affected 0.9.0 and 0.10.0; no data was written with a wrong key.
-- The server now verifies the encryption key at startup and refuses to
-  boot in production without one, instead of failing on first use.
+- Fix: `SVENAGER_ENCRYPTION_KEY` was not applied; storing secrets failed with 500.
+- Missing encryption key fails at startup instead of on first use.
 
 ## 0.10.0 — 2026-08-25
 
-- Private Ansible repositories over HTTPS: a repository can carry a
-  username and token (GitLab/GitHub access or deploy tokens), stored
-  encrypted and handed to git through a credential helper — never in
-  the URL, the process arguments or on disk. Devices keep receiving
-  bundles from the server and never see repository credentials.
-- SSH repositories accept your own private key in addition to the
-  generated deploy key; the matching public key is shown for the
-  hosting side. SSH runs in batch mode so a passphrase or unknown key
-  fails the sync instead of hanging it.
-- Credentials are editable in place ("Edit" on the source card):
-  switch between none / HTTPS token / SSH key, rotate the token or
-  deploy key, keep the stored secret by leaving the field blank. The
-  API exposes `authType`, `authUsername` and `hasCredentials`; the
-  secret is never returned.
-- Schema change: Flyway `V2__repository_auth.sql` (existing deploy-key
-  repositories become `SSH_KEY`, the rest `NONE`).
+- Private repositories over HTTPS with username and token.
+- SSH repositories accept your own private key besides the generated one.
+- Repository credentials editable in place; API adds `authType`, `authUsername`, `hasCredentials`.
+- Flyway migration V2 (`repository_auth`).
 - First startup registers the reference Ansible repository
   ([Klackwerk/ansible-svenager](https://github.com/Klackwerk/ansible-svenager))
   as a default source, so a new instance has assignable roles out of the

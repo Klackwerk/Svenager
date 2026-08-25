@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.2 — 2026-08-25
+
+- Fix: remote view never attached behind a TLS-terminating proxy (WebSocket origin check).
+- Fix: job page crashed for agent-update jobs.
+
 ## 0.10.1 — 2026-08-25
 
 - Fix: `SVENAGER_ENCRYPTION_KEY` was not applied; storing secrets failed with 500.

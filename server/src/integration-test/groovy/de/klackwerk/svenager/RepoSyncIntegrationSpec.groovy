@@ -209,6 +209,133 @@ class RepoSyncIntegrationSpec extends Specification {
         synced.syncError
     }
 
+    void "HTTPS credentials reach git through the helper's environment only"() {
+        given: 'git configured exactly like RepoSyncService does it'
+        ProcessBuilder builder = new ProcessBuilder('git', '-c', 'credential.helper=',
+                '-c', "credential.helper=${RepoSyncService.CREDENTIAL_HELPER}".toString(), 'credential', 'fill')
+        builder.redirectErrorStream(true)
+        builder.environment().put('GIT_TERMINAL_PROMPT', '0')
+        builder.environment().put(RepoSyncService.ENV_USERNAME, 'oauth2')
+        builder.environment().put(RepoSyncService.ENV_PASSWORD, 'glpat-s3cret')
+
+        when:
+        Process process = builder.start()
+        process.outputStream.withWriter { it << 'protocol=https\nhost=gitlab.example.com\n\n' }
+        String output = process.inputStream.text
+        int exit = process.waitFor()
+
+        then:
+        exit == 0
+        output.readLines().contains('username=oauth2')
+        output.readLines().contains('password=glpat-s3cret')
+        !builder.command().join(' ').contains('glpat-s3cret')
+    }
+
+    void "an imported private key yields its public half"() {
+        given: 'a key pair generated outside Svenager'
+        File dir = File.createTempDir()
+        Process keygen = new ProcessBuilder('ssh-keygen', '-t', 'ed25519', '-N', '', '-C', 'spec', '-f',
+                "${dir}/id").redirectErrorStream(true).start()
+        assert keygen.waitFor() == 0, keygen.inputStream.text
+        String privateKey = new File(dir, 'id').text
+        String publicKey = new File(dir, 'id.pub').text.trim()
+
+        when:
+        Map imported = repoSyncService.importDeployKey(privateKey)
+
+        then: 'the public key matches (ssh-keygen -y omits the comment)'
+        publicKey.startsWith(imported.publicKey as String)
+        cryptoService.decrypt(imported.privateKeyEncrypted as String).trim() == privateKey.trim()
+
+        when: 'garbage is imported'
+        repoSyncService.importDeployKey('-----BEGIN OPENSSH PRIVATE KEY-----\nnope\n-----END OPENSSH PRIVATE KEY-----')
+
+        then:
+        thrown(IllegalArgumentException)
+
+        cleanup:
+        dir?.deleteDir()
+    }
+
+    void "repository credentials are managed through the API without leaking the secret"() {
+        given:
+        ApiClient client = new ApiClient(serverPort)
+        client.login('admin', 'admin')
+        String name = "auth-it-${UUID.randomUUID()}"
+
+        when: 'a private HTTPS repository is registered'
+        def created = client.request('POST', '/api/v1/repositories',
+                [name: name, gitUrl: 'https://gitlab.example.com/ops/config.git', authType: 'HTTPS_TOKEN',
+                 authUsername: 'oauth2', authSecret: 'glpat-s3cret'], client.csrfHeader())
+
+        then: 'the summary tells the type and username but not the token'
+        created.status == 201
+        created.body.authType == 'HTTPS_TOKEN'
+        created.body.authUsername == 'oauth2'
+        created.body.hasCredentials == true
+        !created.body.toString().contains('glpat-s3cret')
+        AnsibleRepository.withNewTransaction {
+            AnsibleRepository repo = AnsibleRepository.findByName(name)
+            assert repo.authType == RepoAuthType.HTTPS_TOKEN
+            assert cryptoService.decrypt(repo.authSecretEnc) == 'glpat-s3cret'
+            true
+        }
+
+        when: 'the URL changes but the token is left out'
+        String uuid = created.body.id
+        def renamed = client.request('PUT', "/api/v1/repositories/${uuid}",
+                [gitUrl: 'https://gitlab.example.com/ops/config-v2.git', authType: 'HTTPS_TOKEN', authUsername: 'oauth2'],
+                client.csrfHeader())
+
+        then: 'the stored token is kept'
+        renamed.status == 200
+        renamed.body.hasCredentials == true
+        AnsibleRepository.withNewTransaction {
+            assert cryptoService.decrypt(AnsibleRepository.findByName(name).authSecretEnc) == 'glpat-s3cret'
+            true
+        }
+
+        when: 'the type is switched to an SSH URL with a generated deploy key'
+        def ssh = client.request('PUT', "/api/v1/repositories/${uuid}",
+                [gitUrl: 'git@gitlab.example.com:ops/config.git', authType: 'SSH_KEY', generateDeployKey: true],
+                client.csrfHeader())
+
+        then: 'the old token is gone and a public key is shown'
+        ssh.status == 200
+        ssh.body.authType == 'SSH_KEY'
+        ssh.body.authUsername == null
+        ssh.body.deployKeyPublic.toString().startsWith('ssh-ed25519 ')
+        AnsibleRepository.withNewTransaction {
+            AnsibleRepository repo = AnsibleRepository.findByName(name)
+            assert repo.authSecretEnc == null
+            assert repo.deployKeyPrivateEnc != null
+            true
+        }
+
+        when: 'an SSH key is requested for an HTTPS URL'
+        def mismatch = client.request('PUT', "/api/v1/repositories/${uuid}",
+                [gitUrl: 'https://gitlab.example.com/ops/config.git', authType: 'SSH_KEY'], client.csrfHeader())
+
+        then: 'the request is rejected and nothing changed'
+        mismatch.status == 422
+        AnsibleRepository.withNewTransaction {
+            assert AnsibleRepository.findByName(name).gitUrl == 'git@gitlab.example.com:ops/config.git'
+            true
+        }
+
+        when: 'authentication is switched off'
+        def cleared = client.request('PUT', "/api/v1/repositories/${uuid}", [authType: 'NONE'], client.csrfHeader())
+
+        then:
+        cleared.status == 200
+        cleared.body.authType == 'NONE'
+        cleared.body.hasCredentials == false
+        cleared.body.deployKeyPublic == null
+
+        cleanup:
+        client.request('DELETE', "/api/v1/repositories/${uuid}", null, client.csrfHeader())
+    }
+
     void "crypto round trip works"() {
         expect:
         cryptoService.decrypt(cryptoService.encrypt('s3cret')) == 's3cret'

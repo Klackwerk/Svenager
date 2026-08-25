@@ -31,7 +31,7 @@ admin password is logged **once** — `docker compose logs server | grep
 | What | Why |
 |---|---|
 | `svenager-db` volume (or `pg_dump svenager`) | all state |
-| `SVENAGER_ENCRYPTION_KEY` (from `.env`) | without it, stored secrets and repository deploy keys are unrecoverable |
+| `SVENAGER_ENCRYPTION_KEY` (from `.env`) | without it, stored secrets and repository credentials (deploy keys, tokens) are unrecoverable |
 | agent-update private key (offline, see below) | ability to sign agent updates |
 
 The `svenager-data` volume (repo checkouts, agent binaries) is
@@ -97,7 +97,10 @@ reconstructible but faster to restore than to rebuild.
   exported.
 - Rate limits: public endpoints per address, sign-ins per
   address+username, agent traffic per device id.
-- Secrets (variables, deploy keys) are AES-256-GCM encrypted at rest;
+- Secrets (variables, repository deploy keys and tokens) are AES-256-GCM
+  encrypted at rest; repository credentials are only ever used by the
+  server's git subprocess (token via credential helper, key via a
+  short-lived 0600 temp file) and never reach devices;
   enrollment/device/API tokens are stored hashed; raw values appear
   exactly once.
 - Agent self-update requires a valid Ed25519 signature against a key that

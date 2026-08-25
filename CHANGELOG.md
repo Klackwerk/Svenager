@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- Private Ansible repositories over HTTPS: a repository can carry a
+  username and token (GitLab/GitHub access or deploy tokens), stored
+  encrypted and handed to git through a credential helper — never in
+  the URL, the process arguments or on disk. Devices keep receiving
+  bundles from the server and never see repository credentials.
+- SSH repositories accept your own private key in addition to the
+  generated deploy key; the matching public key is shown for the
+  hosting side. SSH runs in batch mode so a passphrase or unknown key
+  fails the sync instead of hanging it.
+- Credentials are editable in place ("Edit" on the source card):
+  switch between none / HTTPS token / SSH key, rotate the token or
+  deploy key, keep the stored secret by leaving the field blank. The
+  API exposes `authType`, `authUsername` and `hasCredentials`; the
+  secret is never returned.
+- Schema change: Flyway `V2__repository_auth.sql` (existing deploy-key
+  repositories become `SSH_KEY`, the rest `NONE`).
 - First startup registers the reference Ansible repository
   ([Klackwerk/ansible-svenager](https://github.com/Klackwerk/ansible-svenager))
   as a default source, so a new instance has assignable roles out of the

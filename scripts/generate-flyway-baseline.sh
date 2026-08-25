@@ -7,9 +7,10 @@
 # server/src/main/resources/db/migration/V1__baseline.sql.
 #
 # Requirements: the dev PostgreSQL container (default name: psql) is
-# running, JAVA_HOME points to a JDK 17. Only valid while the project is
-# pre-beta — after the first release, model changes need real V<n>
-# migrations instead of a regenerated baseline.
+# running, JAVA_HOME points to a JDK 17. Historical: the baseline is
+# frozen at 0.9.0 — model changes since then ship as V<n> migrations in
+# the same directory (V2__repository_auth.sql onwards), never as a
+# regenerated baseline.
 set -euo pipefail
 
 CONTAINER="${SVENAGER_PG_CONTAINER:-psql}"

@@ -127,17 +127,35 @@ export interface RoleInfo {
   defaults: Record<string, unknown>
 }
 
+export type RepoAuthType = 'NONE' | 'SSH_KEY' | 'HTTPS_TOKEN'
+
 export interface RepositorySummary {
   id: string
   name: string
   gitUrl: string
   branch: string
+  authType: RepoAuthType
+  /** HTTPS_TOKEN only; the token itself is never sent back */
+  authUsername: string | null
+  hasCredentials: boolean
   deployKeyPublic: string | null
   syncStatus: 'NEVER' | 'SYNCING' | 'OK' | 'ERROR'
   syncError: string | null
   lastCommit: string | null
   lastSyncedAt: string | null
   roleCount: number
+}
+
+/** Create/update body for a repository; omitted secrets keep their value. */
+export interface RepositoryInput {
+  name?: string
+  gitUrl?: string
+  branch?: string
+  authType?: RepoAuthType
+  authUsername?: string
+  authSecret?: string
+  generateDeployKey?: boolean
+  sshPrivateKey?: string
 }
 
 export interface EnrollmentToken {

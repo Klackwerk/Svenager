@@ -20,10 +20,10 @@ management:
 spring:
     flyway:
         # Schema management for PostgreSQL (dev + production). An empty
-        # database gets the full baseline; a pre-Flyway database is
-        # baselined in place (it must already match V1 — regenerate with
-        # scripts/generate-flyway-baseline.sh after model changes while
-        # pre-beta). The test environment (H2) opts out below.
+        # database gets the full baseline plus later migrations; a
+        # pre-Flyway 0.9.0 database is baselined in place (it matches V1).
+        # Model changes since 0.9.0 ship as V<n> scripts. The test
+        # environment (H2) opts out below.
         enabled: true
         baseline-on-migrate: true
         baseline-version: 1

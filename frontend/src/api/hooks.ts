@@ -21,6 +21,7 @@ import type {
   NotificationChannelInfo,
   SsoMappingInfo,
   RemoteSessionInfo,
+  RepositoryInput,
   RepositorySummary,
   SearchResults,
   RoleAssignment,
@@ -467,7 +468,7 @@ export function useRepositories() {
 export function useCreateRepository() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: { name: string; gitUrl: string; branch: string; generateDeployKey: boolean }) =>
+    mutationFn: (input: RepositoryInput) =>
       api<RepositorySummary>('/api/v1/repositories', { method: 'POST', body: JSON.stringify(input) }),
     meta: { silentError: true },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['repositories'] }),
@@ -477,7 +478,7 @@ export function useCreateRepository() {
 export function useUpdateRepository() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, ...changes }: { id: string; name?: string; gitUrl?: string; branch?: string }) =>
+    mutationFn: ({ id, ...changes }: RepositoryInput & { id: string }) =>
       api<RepositorySummary>(`/api/v1/repositories/${id}`, { method: 'PUT', body: JSON.stringify(changes) }),
     meta: { silentError: true },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['repositories'] }),

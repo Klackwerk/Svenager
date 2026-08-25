@@ -18,9 +18,204 @@ import {
   useSyncRepository,
   useUpdateRepository,
 } from '../api/hooks'
-import type { RepositorySummary } from '../api/types'
+import type { RepoAuthType, RepositoryInput, RepositorySummary } from '../api/types'
 import { useToast } from '../components/ToastProvider'
 import { absoluteTime, relativeTime } from '../lib/time'
+
+type SshKeySource = 'keep' | 'generate' | 'import'
+
+/** Form state for the credential part of a repository. */
+interface AuthDraft {
+  mode: RepoAuthType
+  username: string
+  secret: string
+  sshKeySource: SshKeySource
+  privateKey: string
+}
+
+const EMPTY_AUTH: AuthDraft = { mode: 'NONE', username: '', secret: '', sshKeySource: 'generate', privateKey: '' }
+
+function authDraftFor(repo: RepositorySummary): AuthDraft {
+  return {
+    ...EMPTY_AUTH,
+    mode: repo.authType,
+    username: repo.authUsername ?? '',
+    sshKeySource: repo.hasCredentials ? 'keep' : 'generate',
+  }
+}
+
+/** API body for a draft; a blank token or a kept key leaves the stored secret alone. */
+function authPayload(draft: AuthDraft): RepositoryInput {
+  switch (draft.mode) {
+    case 'HTTPS_TOKEN':
+      return {
+        authType: 'HTTPS_TOKEN',
+        authUsername: draft.username.trim(),
+        ...(draft.secret ? { authSecret: draft.secret } : {}),
+      }
+    case 'SSH_KEY':
+      return {
+        authType: 'SSH_KEY',
+        generateDeployKey: draft.sshKeySource === 'generate',
+        ...(draft.sshKeySource === 'import' ? { sshPrivateKey: draft.privateKey.trim() } : {}),
+      }
+    default:
+      return { authType: 'NONE' }
+  }
+}
+
+function authLabel(repo: RepositorySummary): string | null {
+  switch (repo.authType) {
+    case 'HTTPS_TOKEN':
+      return `HTTPS token${repo.authUsername ? ` (${repo.authUsername})` : ''}`
+    case 'SSH_KEY':
+      return 'SSH key'
+    default:
+      return null
+  }
+}
+
+const AUTH_OPTIONS: { value: RepoAuthType; label: string }[] = [
+  { value: 'NONE', label: 'None (public repository)' },
+  { value: 'HTTPS_TOKEN', label: 'HTTPS — username & token' },
+  { value: 'SSH_KEY', label: 'SSH — deploy key' },
+]
+
+/**
+ * Credential fields shared by the add form and the edit dialog. In edit
+ * mode, existing secrets can be kept (blank token, "keep current key").
+ */
+function AuthFields({
+  draft,
+  onChange,
+  idPrefix,
+  existing,
+}: {
+  draft: AuthDraft
+  onChange: (draft: AuthDraft) => void
+  idPrefix: string
+  existing?: RepositorySummary
+}) {
+  const set = (patch: Partial<AuthDraft>) => onChange({ ...draft, ...patch })
+  const hasStoredToken = existing?.authType === 'HTTPS_TOKEN' && existing.hasCredentials
+  const hasStoredKey = existing?.authType === 'SSH_KEY' && existing.hasCredentials
+
+  return (
+    <>
+      <Form.Group controlId={`${idPrefix}-auth`} className="mb-3">
+        <Form.Label>Authentication</Form.Label>
+        <Form.Select
+          value={draft.mode}
+          onChange={(e) => {
+            const mode = e.target.value as RepoAuthType
+            set({ mode, sshKeySource: mode === 'SSH_KEY' && hasStoredKey ? 'keep' : 'generate' })
+          }}
+        >
+          {AUTH_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </Form.Select>
+      </Form.Group>
+
+      {draft.mode === 'HTTPS_TOKEN' && (
+        <Row className="g-3">
+          <Col xs={12} md={5}>
+            <Form.Group controlId={`${idPrefix}-auth-username`}>
+              <Form.Label>Username</Form.Label>
+              <Form.Control
+                value={draft.username}
+                onChange={(e) => set({ username: e.target.value })}
+                placeholder="oauth2"
+                required
+              />
+              <Form.Text className="text-secondary">
+                GitLab accepts any username with a personal or project access token; deploy tokens have their own.
+              </Form.Text>
+            </Form.Group>
+          </Col>
+          <Col xs={12} md={7}>
+            <Form.Group controlId={`${idPrefix}-auth-secret`}>
+              <Form.Label>Token or password</Form.Label>
+              <Form.Control
+                type="password"
+                autoComplete="off"
+                value={draft.secret}
+                onChange={(e) => set({ secret: e.target.value })}
+                placeholder={hasStoredToken ? 'Leave blank to keep the stored token' : ''}
+                required={!hasStoredToken}
+              />
+              <Form.Text className="text-secondary">
+                Needs read access to the repository (GitLab scope <code>read_repository</code>). Stored encrypted;
+                never sent to devices.
+              </Form.Text>
+            </Form.Group>
+          </Col>
+        </Row>
+      )}
+
+      {draft.mode === 'SSH_KEY' && (
+        <>
+          <div className="mb-2">
+            {hasStoredKey && (
+              <Form.Check
+                inline
+                type="radio"
+                id={`${idPrefix}-ssh-keep`}
+                name={`${idPrefix}-ssh-source`}
+                label="Keep current key"
+                checked={draft.sshKeySource === 'keep'}
+                onChange={() => set({ sshKeySource: 'keep' })}
+              />
+            )}
+            <Form.Check
+              inline
+              type="radio"
+              id={`${idPrefix}-ssh-generate`}
+              name={`${idPrefix}-ssh-source`}
+              label={hasStoredKey ? 'Generate a new deploy key' : 'Generate deploy key'}
+              checked={draft.sshKeySource === 'generate'}
+              onChange={() => set({ sshKeySource: 'generate' })}
+            />
+            <Form.Check
+              inline
+              type="radio"
+              id={`${idPrefix}-ssh-import`}
+              name={`${idPrefix}-ssh-source`}
+              label="Use my own private key"
+              checked={draft.sshKeySource === 'import'}
+              onChange={() => set({ sshKeySource: 'import' })}
+            />
+          </div>
+          {draft.sshKeySource === 'import' ? (
+            <Form.Group controlId={`${idPrefix}-ssh-key`}>
+              <Form.Control
+                as="textarea"
+                rows={5}
+                className="font-monospace small"
+                value={draft.privateKey}
+                onChange={(e) => set({ privateKey: e.target.value })}
+                placeholder={'-----BEGIN OPENSSH PRIVATE KEY-----\n…'}
+                required
+              />
+              <Form.Text className="text-secondary">
+                Private key without passphrase, e.g. from <code>ssh-keygen -t ed25519</code>. Stored encrypted; the
+                matching public key is shown afterwards for the repository's deploy keys.
+              </Form.Text>
+            </Form.Group>
+          ) : (
+            <Form.Text className="text-secondary d-block">
+              {draft.sshKeySource === 'generate'
+                ? 'Svenager generates an ed25519 key pair; add the shown public key as a read-only deploy key in GitLab/GitHub.'
+                : 'The stored private key stays in use.'}
+            </Form.Text>
+          )}
+        </>
+      )}
+    </>
+  )
+}
 
 const STATUS: Record<RepositorySummary['syncStatus'], { label: string; bg: string }> = {
   NEVER: { label: 'Not synced yet', bg: 'secondary' },
@@ -105,9 +300,15 @@ export default function AnsibleSources() {
   const [name, setName] = useState('')
   const [gitUrl, setGitUrl] = useState('')
   const [branch, setBranch] = useState('main')
-  const [generateDeployKey, setGenerateDeployKey] = useState(false)
+  const [auth, setAuth] = useState<AuthDraft>(EMPTY_AUTH)
   const [showKeyFor, setShowKeyFor] = useState<string | null>(null)
-  const [editing, setEditing] = useState<{ id: string; name: string; gitUrl: string; branch: string } | null>(null)
+  const [editing, setEditing] = useState<{
+    repo: RepositorySummary
+    name: string
+    gitUrl: string
+    branch: string
+    auth: AuthDraft
+  } | null>(null)
   const [toRemove, setToRemove] = useState<RepositorySummary | null>(null)
   const [copiedKeyFor, setCopiedKeyFor] = useState<string | null>(null)
   const toast = useToast()
@@ -126,25 +327,32 @@ export default function AnsibleSources() {
     if (!editing) return
     updateRepository.mutate(
       {
-        id: editing.id,
+        id: editing.repo.id,
         name: editing.name.trim(),
         gitUrl: editing.gitUrl.trim(),
         branch: editing.branch.trim() || 'main',
+        ...authPayload(editing.auth),
       },
-      { onSuccess: (repo) => { setEditing(null); syncRepository.mutate(repo.id) } },
+      {
+        onSuccess: (repo) => {
+          setEditing(null)
+          if (repo.deployKeyPublic && repo.deployKeyPublic !== editing.repo.deployKeyPublic) setShowKeyFor(repo.id)
+          syncRepository.mutate(repo.id)
+        },
+      },
     )
   }
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
     createRepository.mutate(
-      { name: name.trim(), gitUrl: gitUrl.trim(), branch: branch.trim() || 'main', generateDeployKey },
+      { name: name.trim(), gitUrl: gitUrl.trim(), branch: branch.trim() || 'main', ...authPayload(auth) },
       {
         onSuccess: (repo) => {
           setName('')
           setGitUrl('')
           setBranch('main')
-          setGenerateDeployKey(false)
+          setAuth(EMPTY_AUTH)
           if (repo.deployKeyPublic) setShowKeyFor(repo.id)
         },
       },
@@ -163,7 +371,7 @@ export default function AnsibleSources() {
         <Card.Body>
           <Card.Title className="h6">Add repository</Card.Title>
           {createRepository.isError && (
-            <Alert variant="danger">The repository could not be added — is the name already in use?</Alert>
+            <Alert variant="danger">The repository could not be added: {createRepository.error.message}</Alert>
           )}
           <Form onSubmit={submit}>
             <Row className="g-3 align-items-end">
@@ -184,7 +392,7 @@ export default function AnsibleSources() {
                   />
                 </Form.Group>
               </Col>
-              <Col xs={6} md={2}>
+              <Col xs={12} md={3}>
                 <Form.Group controlId="repo-branch">
                   <Form.Label>Branch or tag</Form.Label>
                   <Form.Control
@@ -194,20 +402,15 @@ export default function AnsibleSources() {
                   />
                 </Form.Group>
               </Col>
-              <Col xs={6} md={2}>
-                <Form.Check
-                  id="repo-deploy-key"
-                  label="Generate deploy key"
-                  checked={generateDeployKey}
-                  onChange={(e) => setGenerateDeployKey(e.target.checked)}
-                />
-              </Col>
-              <Col xs={12} md={1}>
+              <Col xs={12} md={2}>
                 <Button type="submit" className="w-100" disabled={createRepository.isPending}>
                   {createRepository.isPending ? '…' : 'Add'}
                 </Button>
               </Col>
             </Row>
+            <div className="mt-3">
+              <AuthFields draft={auth} onChange={setAuth} idPrefix="repo" />
+            </div>
           </Form>
         </Card.Body>
       </Card>
@@ -230,6 +433,7 @@ export default function AnsibleSources() {
                   </Card.Title>
                   <div className="text-secondary small">
                     <code>{repo.gitUrl}</code> · ref <code>{repo.branch}</code>
+                    {authLabel(repo) && <span> · {authLabel(repo)}</span>}
                     {repo.lastSyncedAt && (
                       <span title={absoluteTime(repo.lastSyncedAt)}> · synced {relativeTime(repo.lastSyncedAt)}</span>
                     )}
@@ -242,7 +446,13 @@ export default function AnsibleSources() {
                     size="sm"
                     variant="outline-secondary"
                     onClick={() =>
-                      setEditing({ id: repo.id, name: repo.name, gitUrl: repo.gitUrl, branch: repo.branch })
+                      setEditing({
+                        repo,
+                        name: repo.name,
+                        gitUrl: repo.gitUrl,
+                        branch: repo.branch,
+                        auth: authDraftFor(repo),
+                      })
                     }
                   >
                     Edit
@@ -330,7 +540,7 @@ export default function AnsibleSources() {
         <Form onSubmit={submitEdit}>
           <Modal.Body>
             {updateRepository.isError && (
-              <Alert variant="danger">The repository could not be updated (name may already exist).</Alert>
+              <Alert variant="danger">The repository could not be updated: {updateRepository.error.message}</Alert>
             )}
             <Form.Group className="mb-3" controlId="edit-repo-name">
               <Form.Label>Name</Form.Label>
@@ -351,7 +561,7 @@ export default function AnsibleSources() {
                 Discovered roles and assignments are kept; the next sync re-clones from the new location.
               </Form.Text>
             </Form.Group>
-            <Form.Group controlId="edit-repo-branch">
+            <Form.Group className="mb-3" controlId="edit-repo-branch">
               <Form.Label>Branch or tag</Form.Label>
               <Form.Control
                 value={editing?.branch ?? ''}
@@ -359,6 +569,14 @@ export default function AnsibleSources() {
                 placeholder="main or v1.0"
               />
             </Form.Group>
+            {editing && (
+              <AuthFields
+                draft={editing.auth}
+                onChange={(auth) => setEditing((c) => (c ? { ...c, auth } : c))}
+                idPrefix="edit-repo"
+                existing={editing.repo}
+              />
+            )}
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setEditing(null)}>

@@ -60,7 +60,7 @@ The `ansible/` reference repo doubles as the documented **convention**: any exte
 - `EnrollmentToken` — label, hashed token, maxUses/usedCount, expiresAt, target group(s)
 - `Device` — uuid, hostname, arch, os info, agentVersion, hashed device API token, status, `lastContactAt`, `lastJobAt`, facts (jsonb)
 - `DeviceGroup` + m2m membership
-- `AnsibleRepository` — name, git URL, branch, credentials (SSH deploy key / token, encrypted at rest), lastSyncedAt, lastCommit, syncStatus
+- `AnsibleRepository` — name, git URL, branch, `authType` (`NONE`, `SSH_KEY`, `HTTPS_TOKEN`) with the matching credentials (deploy key or username/token, encrypted at rest), lastSyncedAt, lastCommit, syncStatus
 - `DiscoveredRole` — repo, name, path, friendly description, argument spec (jsonb), defaults
 - `GroupRoleAssignment` — group ⇄ role, execution order, enabled flag
 - `ConfigVariable` — scope (group|device), key, typed value (jsonb), `secret` flag (AES-GCM encrypted)

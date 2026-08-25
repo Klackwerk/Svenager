@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.10.0 — 2026-08-25
 
 - Private Ansible repositories over HTTPS: a repository can carry a
   username and token (GitLab/GitHub access or deploy tokens), stored

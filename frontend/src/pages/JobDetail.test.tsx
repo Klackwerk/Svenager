@@ -17,6 +17,9 @@ function jobDetail(overrides: Partial<JobDetailInfo>): JobDetailInfo {
     exitCode: null,
     error: null,
     triggeredBy: 'admin',
+    attempt: 1,
+    maxAttempts: 3,
+    retriesExhausted: false,
     runAfter: null,
     queuedAt: new Date().toISOString(),
     startedAt: new Date().toISOString(),
@@ -113,5 +116,26 @@ describe('job actions', () => {
       ).toBe(true),
     )
     expect(screen.queryByRole('button', { name: 'Cancel job' })).not.toBeInTheDocument()
+  })
+
+  it('explains exhausted retries and points to Re-run', async () => {
+    renderJob(
+      jobDetail({
+        status: 'FAILED',
+        finishedAt: new Date().toISOString(),
+        triggeredBy: 'auto (retry 3 of 3)',
+        attempt: 3,
+        retriesExhausted: true,
+      }),
+    )
+    expect(await screen.findByText(/Automatic retries are exhausted/)).toBeInTheDocument()
+    expect(screen.getByText(/attempt 3 of 3/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Re-run' })).toBeInTheDocument()
+  })
+
+  it('stays quiet about retries for a plain failure', async () => {
+    renderJob(jobDetail({ status: 'FAILED', finishedAt: new Date().toISOString() }))
+    await screen.findByRole('button', { name: 'Re-run' })
+    expect(screen.queryByText(/Automatic retries are exhausted/)).not.toBeInTheDocument()
   })
 })

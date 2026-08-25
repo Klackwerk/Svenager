@@ -1,3 +1,4 @@
+import Badge from 'react-bootstrap/Badge'
 import Table from 'react-bootstrap/Table'
 import { Link } from 'react-router-dom'
 import type { JobSummary } from '../api/types'
@@ -46,7 +47,14 @@ export default function JobsTable({ jobs, showDevice = true }: { jobs: JobSummar
         {sort.sorted.map((job) => (
           <tr key={job.id}>
             <td>
-              <JobStatusBadge status={job.status} />
+              <div className="d-flex flex-wrap gap-1">
+                <JobStatusBadge status={job.status} />
+                {job.retriesExhausted && (
+                  <Badge bg="warning" text="dark" title="Automatic retries are used up — re-run or apply to continue">
+                    No more retries
+                  </Badge>
+                )}
+              </div>
             </td>
             <td>{TYPE_LABELS[job.type] ?? job.type}</td>
             {showDevice && (

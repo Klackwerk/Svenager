@@ -210,6 +210,9 @@ class JobServiceSpec extends Specification implements ServiceUnitTest<JobService
         Job.countByDevice(d) == 3
         Job.findAllByDevice(d).every { it.status == JobStatus.FAILED }
 
+        and: 'only the last attempt is flagged as exhausted for the UI'
+        Job.findAllByDevice(d).findAll { JobService.retriesExhausted(it) }*.attempt == [3]
+
         when: 'the spec changes'
         groupService.replaceVariables(null, d, [[name: 'text', value: 'v2', secret: false]])
 

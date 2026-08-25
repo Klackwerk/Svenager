@@ -2,6 +2,7 @@ package de.klackwerk.svenager
 
 import grails.core.GrailsApplication
 import grails.gorm.transactions.Transactional
+import grails.util.Holders
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 
@@ -219,7 +220,21 @@ class JobService {
     }
 
     private int maxAttempts() {
-        grailsApplication.config.getProperty('svenager.jobs.maxAttempts', Integer, 3)
+        retryBound()
+    }
+
+    /** Auto-retry bound for applies (svenager.jobs.maxAttempts). */
+    static int retryBound() {
+        Holders.config?.getProperty('svenager.jobs.maxAttempts', Integer, 3) ?: 3
+    }
+
+    /**
+     * True once a failed apply used up its automatic retries: the device
+     * stays unconverged until an operator re-runs or the spec changes.
+     */
+    static boolean retriesExhausted(Job job) {
+        job.type == JobType.APPLY_CONFIG && job.status in [JobStatus.FAILED, JobStatus.TIMED_OUT] &&
+                job.attempt >= retryBound()
     }
 
     /** Alert only once auto-retries are exhausted — not for every attempt. */

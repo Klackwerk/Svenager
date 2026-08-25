@@ -95,6 +95,14 @@ export default function JobDetail() {
         )}
       </div>
 
+      {job.retriesExhausted && (
+        <Alert variant="warning">
+          <strong>Automatic retries are exhausted</strong> (attempt {job.attempt} of {job.maxAttempts}). Svenager
+          only re-queues this configuration on its own once it changes. Fix the cause on the device, then{' '}
+          <strong>Re-run</strong> — that starts a fresh attempt counter.
+        </Alert>
+      )}
+
       <Card className="mb-3">
         <Card.Body>
           <Table size="sm" responsive className="mb-0">
@@ -118,6 +126,14 @@ export default function JobDetail() {
                   {relativeTime(job.startedAt)} / {relativeTime(job.finishedAt)}
                 </td>
               </tr>
+              {job.type === 'APPLY_CONFIG' && job.attempt > 1 && (
+                <tr>
+                  <th scope="row">Attempt</th>
+                  <td>
+                    {job.attempt} of {job.maxAttempts}
+                  </td>
+                </tr>
+              )}
               {job.exitCode != null && (
                 <tr>
                   <th scope="row">Exit code</th>

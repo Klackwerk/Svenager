@@ -183,6 +183,11 @@ export interface JobSummary {
   exitCode: number | null
   error: string | null
   triggeredBy: string | null
+  /** 1 for operator/drift jobs; auto-retries count up to maxAttempts. */
+  attempt: number
+  maxAttempts: number
+  /** Failed apply that used up its auto-retries — needs Re-run/Apply. */
+  retriesExhausted: boolean
   /** Not delivered before this time; null = immediately. */
   runAfter: string | null
   queuedAt: string | null

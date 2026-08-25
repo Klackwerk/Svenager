@@ -70,6 +70,10 @@ reconstructible but faster to restore than to rebuild.
 - `GET /actuator/health` is public (used by the compose healthchecks).
 - Alerting page (admin): email/webhook channels for device-offline,
   exhausted apply retries and repo-sync failures.
+- Exhausted apply retries (`svenager.jobs.maxAttempts`, default 3) are
+  flagged on the device and job pages; the device stays unconverged until
+  an operator presses "Apply configuration" / "Re-run" (fresh attempt
+  counter) or the composed configuration changes.
 - Audit page (admin): sign-ins and every administrative change.
 - Server log file: `logs/svenager.log` inside the server container
   (path via `LOG_FILE`/`LOG_PATH`).

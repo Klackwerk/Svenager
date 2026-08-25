@@ -126,6 +126,9 @@ class JobLifecycleIntegrationSpec extends Specification {
         then:
         done.body.status == 'SUCCEEDED'
         done.body.log == 'PLAY [all]\n'
+        done.body.attempt == 1
+        done.body.maxAttempts == 3
+        done.body.retriesExhausted == false
 
         and: 'the device now has a last-job timestamp'
         client.request('GET', "/api/v1/devices/${enroll.body.deviceId}").body.lastJobAt != null

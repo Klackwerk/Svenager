@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
+import Alert from 'react-bootstrap/Alert'
 import Badge from 'react-bootstrap/Badge'
 import Button from 'react-bootstrap/Button'
 import Card from 'react-bootstrap/Card'
@@ -41,6 +42,9 @@ export default function DeviceDetail() {
   const deviceJobs = jobs?.items ?? []
   const jobsTotal = jobs?.total ?? 0
   const lastJobsOffset = Math.floor(Math.max(jobsTotal - 1, 0) / JOBS_PAGE_SIZE) * JOBS_PAGE_SIZE
+  // Newest apply first on the first page; a stuck one needs the operator.
+  const latestApply = jobsOffset === 0 ? deviceJobs.find((j) => j.type === 'APPLY_CONFIG') : undefined
+  const retriesExhausted = latestApply?.retriesExhausted ?? false
   const setGroups = useSetDeviceGroups(id ?? '')
   const replaceVariables = useReplaceDeviceVariables(id ?? '')
   const applyDevice = useApplyDevice()
@@ -188,6 +192,19 @@ export default function DeviceDetail() {
           {applyDevice.isPending ? 'Queuing…' : 'Apply configuration'}
         </Button>
       </div>
+
+      {retriesExhausted && latestApply && (
+        <Alert variant="warning" className="d-flex align-items-center gap-2 flex-wrap">
+          <div className="flex-grow-1">
+            <strong>Configuration is not applied.</strong> The last apply failed {latestApply.attempt} times and
+            automatic retries are exhausted; nothing runs again until you apply or the configuration changes. Fix
+            the cause on the device (see the <Link to={`/jobs/${latestApply.id}`}>job log</Link>), then apply again.
+          </div>
+          <Button size="sm" variant="warning" disabled={applyDevice.isPending} onClick={() => setConfirmApply(true)}>
+            Apply configuration
+          </Button>
+        </Alert>
+      )}
 
       <Row className="g-3">
         <Col xs={12} lg={6}>

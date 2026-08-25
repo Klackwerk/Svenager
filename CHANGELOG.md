@@ -9,6 +9,11 @@
   disables seeding); delete it in the UI if unwanted.
 - The reference Ansible repository moved to its own repo and is embedded
   as the `ansible/` submodule.
+- The kiosk role now boots into the browser on a full Debian desktop
+  install, not just a console image: it masks a conflicting display
+  manager, enables lingering so the compositor gets an
+  `XDG_RUNTIME_DIR`, and drops the login session's leaked ambient
+  capability so WebKit's sandboxed processes start (the sandbox stays on).
 - The enrollment one-liner (`install.sh`) installs `git` and
   `ansible-core` when missing, so a bare Debian can run its first apply;
   the agent `.deb` accepts `ansible-core | ansible`. The agent's job log

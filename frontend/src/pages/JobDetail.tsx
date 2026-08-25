@@ -146,7 +146,13 @@ export default function JobDetail() {
                   <td className="text-danger">{job.error}</td>
                 </tr>
               )}
-              {job.payload && (
+              {job.type === 'AGENT_UPDATE' && (
+                <tr>
+                  <th scope="row">Target version</th>
+                  <td>{job.payload?.version || 'latest available'}</td>
+                </tr>
+              )}
+              {job.payload?.plays && (
                 <tr>
                   <th scope="row">Runs</th>
                   <td>
@@ -165,7 +171,7 @@ export default function JobDetail() {
                   </td>
                 </tr>
               )}
-              {expert && job.payload && Object.keys(job.payload.extraVars).length > 0 && (
+              {expert && job.payload?.extraVars && Object.keys(job.payload.extraVars).length > 0 && (
                 <tr>
                   <th scope="row">Variables</th>
                   <td style={{ wordBreak: 'break-word' }}>

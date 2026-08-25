@@ -235,11 +235,13 @@ export interface JobPage {
 }
 
 export interface JobDetail extends JobSummary {
+  /** APPLY_CONFIG carries plays/vars; AGENT_UPDATE only a version; PING nothing. */
   payload: {
-    timeoutSeconds: number
-    plays: Array<{ repoId: number; repoName: string; commit: string; roles: string[] }>
-    extraVars: Record<string, unknown>
-    secretVars: string[]
+    timeoutSeconds?: number
+    plays?: Array<{ repoId: number; repoName: string; commit: string; roles: string[] }>
+    extraVars?: Record<string, unknown>
+    secretVars?: string[]
+    version?: string
   } | null
   log: string
 }

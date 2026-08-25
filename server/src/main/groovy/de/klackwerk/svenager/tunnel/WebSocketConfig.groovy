@@ -1,6 +1,7 @@
 package de.klackwerk.svenager.tunnel
 
 import de.klackwerk.svenager.RemoteSessionService
+import grails.core.GrailsApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.socket.config.annotation.EnableWebSocket
@@ -19,10 +20,13 @@ class WebSocketConfig implements WebSocketConfigurer {
 
     private final TunnelBroker broker
     private final RemoteSessionService remoteSessionService
+    private final GrailsApplication grailsApplication
 
-    WebSocketConfig(TunnelBroker broker, RemoteSessionService remoteSessionService) {
+    WebSocketConfig(TunnelBroker broker, RemoteSessionService remoteSessionService,
+                    GrailsApplication grailsApplication) {
         this.broker = broker
         this.remoteSessionService = remoteSessionService
+        this.grailsApplication = grailsApplication
     }
 
     @Override
@@ -30,10 +34,16 @@ class WebSocketConfig implements WebSocketConfigurer {
         // Grails' UrlMappingsHandlerMapping runs at order -5 and would answer
         // the handshake with a 404 — the tunnel endpoints must match first.
         registry.order = -10
+        // Spring's own origin check compares against the URL Tomcat sees,
+        // which is wrong behind a TLS-terminating proxy; the interceptor
+        // does a forwarded-header-aware check instead.
+        String externalUrl = grailsApplication.config.getProperty('svenager.externalUrl', String, '')
         registry.addHandler(new AgentTunnelHandler(broker), '/api/v1/agent/tunnel/*')
-                .addInterceptors(new TunnelHandshakeInterceptor(remoteSessionService, true))
+                .setAllowedOrigins('*')
+                .addInterceptors(new TunnelHandshakeInterceptor(remoteSessionService, true, externalUrl))
         registry.addHandler(new ViewerTunnelHandler(broker), '/api/v1/ui/vnc/*')
-                .addInterceptors(new TunnelHandshakeInterceptor(remoteSessionService, false))
+                .setAllowedOrigins('*')
+                .addInterceptors(new TunnelHandshakeInterceptor(remoteSessionService, false, externalUrl))
     }
 
     @Bean

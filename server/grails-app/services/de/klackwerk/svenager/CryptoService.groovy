@@ -51,6 +51,11 @@ class CryptoService {
         new String(cipher.doFinal(ciphertext), 'UTF-8')
     }
 
+    /** Loads the key now so a missing production key fails at startup. */
+    void verifyKey() {
+        getKey()
+    }
+
     private SecretKey getKey() {
         if (cachedKey == null) {
             synchronized (this) {

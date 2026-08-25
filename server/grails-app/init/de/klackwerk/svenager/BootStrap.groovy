@@ -12,8 +12,11 @@ class BootStrap {
     GrailsApplication grailsApplication
     PasswordEncoder passwordEncoder
     RemoteSessionService remoteSessionService
+    CryptoService cryptoService
 
     def init = { servletContext ->
+        // Fail at boot, not on the first stored secret.
+        cryptoService.verifyKey()
         remoteSessionService.closeAllOpen('server restarted')
         User.withTransaction {
             if (User.count() > 0) {

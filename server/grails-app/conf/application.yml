@@ -33,6 +33,11 @@ svenager:
     # enrollment one-liner and the install script. Empty = derive from the
     # request (X-Forwarded-Proto/-Host aware, so it works behind a proxy).
     externalUrl: '${SVENAGER_EXTERNAL_URL:}'
+    security:
+        # AES-256 key for secrets at rest (repository credentials, secret
+        # variables): 32 random base64-encoded bytes. Required in
+        # production; dev/test generate one under build/ (CryptoService).
+        encryptionKey: '${SVENAGER_ENCRYPTION_KEY:}'
     agent:
         # Base check-in interval sent to agents; also drives online detection.
         pollIntervalSeconds: 60

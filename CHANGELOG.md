@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.10.1 — 2026-08-25
+
+- Fix: `SVENAGER_ENCRYPTION_KEY` was never bound to the setting
+  `CryptoService` reads, so production instances failed with "No
+  encryption key configured" (HTTP 500) as soon as a repository
+  credential or secret variable was stored — even with the variable set.
+  Affected 0.9.0 and 0.10.0; no data was written with a wrong key.
+- The server now verifies the encryption key at startup and refuses to
+  boot in production without one, instead of failing on first use.
+
 ## 0.10.0 — 2026-08-25
 
 - Private Ansible repositories over HTTPS: a repository can carry a

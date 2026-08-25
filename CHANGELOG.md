@@ -9,6 +9,15 @@
   disables seeding); delete it in the UI if unwanted.
 - The reference Ansible repository moved to its own repo and is embedded
   as the `ansible/` submodule.
+- The enrollment one-liner (`install.sh`) installs `git` and
+  `ansible-core` when missing, so a bare Debian can run its first apply;
+  the agent `.deb` accepts `ansible-core | ansible`. The agent's job log
+  names the missing `ansible-playbook` instead of a raw exec error.
+- Exhausted apply retries are visible: jobs report `attempt`,
+  `maxAttempts` and `retriesExhausted`; the device page shows a warning
+  with an inline "Apply configuration", the job page explains that
+  "Re-run" starts a fresh attempt counter, job tables carry a "No more
+  retries" badge.
 
 ## 0.9.0 — 2026-08-21
 

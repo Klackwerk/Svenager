@@ -18,6 +18,14 @@ management:
                 include: health
 
 spring:
+    session:
+        # Server-side sessions in the database so a restart (deploy) does not
+        # log operators out. Prod (Postgres) gets the tables from Flyway V4;
+        # the test env (H2) creates them itself (embedded).
+        store-type: jdbc
+        timeout: 12h
+        jdbc:
+            initialize-schema: embedded
     flyway:
         # Schema management for PostgreSQL (dev + production). An empty
         # database gets the full baseline plus later migrations; a

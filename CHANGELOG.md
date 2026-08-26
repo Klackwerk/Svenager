@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Sessions survive server restarts (Spring Session JDBC)
+- Fix: browser shell dropped the connection the moment the session went live.
 - Per-device Reboot button.
 - Browser shell: open an interactive terminal on a device over the audited reverse tunnel.
 - Group page: device names link straight to the device.

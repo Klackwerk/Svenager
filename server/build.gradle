@@ -47,6 +47,7 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-tomcat"
     // Tunnel broker (remote view): plain WebSocket handlers on embedded Tomcat.
     implementation "org.springframework:spring-websocket"
+    implementation "org.springframework.session:spring-session-jdbc"
     implementation "org.apache.grails:grails-url-mappings"
     implementation "org.apache.grails:grails-rest-transforms"
     implementation "org.apache.grails:grails-interceptors"

@@ -27,6 +27,11 @@ class RepositoryController {
             respondError(409, 'a repository with this name already exists')
             return
         }
+        String urlError = gitUrlError(gitUrl)
+        if (urlError) {
+            respondError(422, urlError)
+            return
+        }
         AnsibleRepository repo = new AnsibleRepository(
                 name: name,
                 gitUrl: gitUrl,
@@ -60,6 +65,11 @@ class RepositoryController {
         String branch = body?.branch?.toString()?.trim()
         if (name && name != repo.name && AnsibleRepository.findByName(name)) {
             respondError(409, 'a repository with this name already exists')
+            return
+        }
+        String urlError = gitUrl ? gitUrlError(gitUrl) : null
+        if (urlError) {
+            respondError(422, urlError)
             return
         }
         if (name) repo.name = name
@@ -127,6 +137,19 @@ class RepositoryController {
                 argumentSpec  : role.argumentSpecJson ? new JsonSlurper().parseText(role.argumentSpecJson) : [:],
                 defaults      : role.defaultsJson ? new JsonSlurper().parseText(role.defaultsJson) : [:],
         ]
+    }
+
+    /**
+     * Catches the common SCP-style slip in an http(s) URL
+     * (https://host:group/repo.git) before git fails on the "port".
+     */
+    static String gitUrlError(String gitUrl) {
+        def m = gitUrl =~ /(?i)^(https?:\/\/)([^\/@]+@)?([^\/:]+):([^\/\d][^\/]*)(\/.*)?$/
+        if (m.matches()) {
+            String fixed = "${m.group(1)}${m.group(2) ?: ''}${m.group(3)}/${m.group(4)}${m.group(5) ?: ''}"
+            return "'${gitUrl}' has a non-numeric port — did you mean ${fixed}?".toString()
+        }
+        null
     }
 
     /**

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Git URLs like `https://host:group/repo.git` are rejected with the corrected URL as hint.
+- Pushes to `main` build the `latest` server and frontend images.
+
 ## 0.10.2 — 2026-08-25
 
 - Fix: remote view never attached behind a TLS-terminating proxy (WebSocket origin check).

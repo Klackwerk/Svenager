@@ -25,8 +25,13 @@ export default function DeviceShell() {
 
   const screenRef = useRef<HTMLDivElement>(null)
   const wsRef = useRef<WebSocket | null>(null)
+  const termRef = useRef<Terminal | null>(null)
   const [connected, setConnected] = useState(false)
 
+  // Attach once the agent's tunnel is up. No cleanup here: the session
+  // object changes on every status poll (AGENT_CONNECTED -> ACTIVE), and a
+  // cleanup tied to it would tear down the socket we just opened. Teardown
+  // is unmount-only, below.
   useEffect(() => {
     if (!session || wsRef.current || !screenRef.current) return
     if (session.status !== 'AGENT_CONNECTED') return
@@ -36,6 +41,7 @@ export default function DeviceShell() {
     term.loadAddon(fit)
     term.open(screenRef.current)
     fit.fit()
+    termRef.current = term
 
     const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
     const ws = new WebSocket(`${proto}://${window.location.host}${session.wsPath}`, ['binary'])
@@ -51,13 +57,18 @@ export default function DeviceShell() {
       if (ws.readyState === WebSocket.OPEN) ws.send(encoder.encode(data))
     })
     wsRef.current = ws
-
-    return () => {
-      ws.close()
-      term.dispose()
-      wsRef.current = null
-    }
   }, [session])
+
+  // Teardown on unmount only (the broker closes the audited session as soon
+  // as the viewer socket goes away).
+  useEffect(() => {
+    return () => {
+      wsRef.current?.close()
+      wsRef.current = null
+      termRef.current?.dispose()
+      termRef.current = null
+    }
+  }, [])
 
   const hostname = device?.hostname ?? session?.hostname ?? '…'
   const closed = session?.status === 'CLOSED'
@@ -68,7 +79,10 @@ export default function DeviceShell() {
   }
 
   const startNewSession = () => {
+    wsRef.current?.close()
     wsRef.current = null
+    termRef.current?.dispose()
+    termRef.current = null
     setConnected(false)
     opened.refetch()
   }

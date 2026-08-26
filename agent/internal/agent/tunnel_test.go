@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -132,5 +133,66 @@ func TestTunnelFailsOnRejectedHandshake(t *testing.T) {
 
 	if code := runTunnel(context.Background(), cfg, client, newTunnelJob(t, port), reporter); code != 1 {
 		t.Fatalf("exit code = %d, want 1", code)
+	}
+}
+
+func TestRunShellPipesPTYOverTunnel(t *testing.T) {
+	// Server end of the tunnel: accept the agent's websocket and speak raw
+	// bytes to the PTY on the other side.
+	srvWS := make(chan *websocket.Conn, 1)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/events") {
+			w.Write([]byte(`{"ok":true}`))
+			return
+		}
+		c, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			t.Errorf("accept: %v", err)
+			return
+		}
+		srvWS <- c
+		<-r.Context().Done()
+	}))
+	defer server.Close()
+
+	cfg := &config.Config{ServerURL: server.URL, DeviceToken: "svdt_test", StateDir: t.TempDir()}
+	client := api.NewClient(cfg, "test")
+	reporter := &eventReporter{ctx: context.Background(), client: client, jobID: "shell-1"}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	done := make(chan int, 1)
+	go func() { done <- runShell(ctx, client, "sess-shell", reporter) }()
+
+	ws := <-srvWS
+	// The interactive shell echoes input and runs it; a unique marker proves
+	// the PTY is live and bytes flow both ways.
+	if err := ws.Write(ctx, websocket.MessageBinary, []byte("echo svenager-shell-ok\n")); err != nil {
+		t.Fatalf("write to shell: %v", err)
+	}
+	deadline := time.Now().Add(10 * time.Second)
+	var got []byte
+	for time.Now().Before(deadline) {
+		_, data, err := ws.Read(ctx)
+		if err != nil {
+			t.Fatalf("read from shell: %v", err)
+		}
+		got = append(got, data...)
+		if strings.Contains(string(got), "svenager-shell-ok") {
+			break
+		}
+	}
+	if !strings.Contains(string(got), "svenager-shell-ok") {
+		t.Fatalf("marker not seen in shell output: %q", got)
+	}
+
+	ws.Close(websocket.StatusNormalClosure, "")
+	select {
+	case code := <-done:
+		if code != 0 {
+			t.Errorf("runShell exit = %d, want 0", code)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("runShell did not return after tunnel close")
 	}
 }

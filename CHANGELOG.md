@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Ending a remote view or shell session no longer immediately opens a new one.
+- Device action buttons regrouped
 - Sessions survive server restarts (Spring Session JDBC)
 - Fix: browser shell dropped the connection the moment the session went live.
 - Per-device Reboot button.

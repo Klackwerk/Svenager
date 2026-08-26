@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RemoteSessionInfo } from '../api/types'
@@ -123,5 +123,50 @@ describe('DeviceShell', () => {
     expect(ws.close).not.toHaveBeenCalled()
     expect(sockets).toHaveLength(1)
     expect(await screen.findByText('Live')).toBeInTheDocument()
+  })
+
+  it('ending the session does not immediately open a new one', async () => {
+    let shellPosts = 0
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        if (url.endsWith('/shell-session') && init?.method === 'POST') {
+          shellPosts += 1
+          return new Response(JSON.stringify(session('AGENT_CONNECTED')), { status: 201 })
+        }
+        if (url.includes('/remote-sessions/sh-1') && init?.method === 'DELETE') {
+          return new Response(JSON.stringify(session('CLOSED')), { status: 200 })
+        }
+        if (url.includes('/remote-sessions/sh-1')) {
+          return new Response(JSON.stringify(session('AGENT_CONNECTED')), { status: 200 })
+        }
+        if (url.includes('/devices/dev-1')) {
+          return new Response(JSON.stringify({ id: 'dev-1', hostname: 'kiosk-01', online: true }), { status: 200 })
+        }
+        return new Response(JSON.stringify({}), { status: 404 })
+      }),
+    )
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <MemoryRouter initialEntries={['/devices/dev-1/shell']}>
+          <Routes>
+            <Route path="/devices/:id/shell" element={<DeviceShell />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await waitFor(() => expect(sockets).toHaveLength(1))
+    sockets[0].onopen?.()
+    expect(shellPosts).toBe(1)
+
+    fireEvent.click(await screen.findByText('End session'))
+    await vi.advanceTimersByTimeAsync(3000)
+
+    // The session shows as ended, and no fresh session was opened.
+    expect(await screen.findByText('Session ended')).toBeInTheDocument()
+    expect(shellPosts).toBe(1)
+    expect(sockets).toHaveLength(1)
   })
 })

@@ -753,7 +753,14 @@ export function useCloseRemoteSession() {
     mutationFn: (sessionId: string) =>
       api<RemoteSessionInfo>(`/api/v1/remote-sessions/${sessionId}`, { method: 'DELETE' }),
     meta: { errorMessage: 'The remote session could not be ended.' },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['remote-sessions'] }),
+    // Reflect the closed session immediately, but do NOT refetch the
+    // get-or-create open/shell queries — that would POST a brand-new session
+    // the instant the user ends this one. The audit list refreshes on its
+    // own interval.
+    onSuccess: (closed, sessionId) => {
+      queryClient.setQueryData(['remote-sessions', sessionId], closed)
+      queryClient.invalidateQueries({ queryKey: ['remote-sessions'], refetchType: 'none' })
+    },
   })
 }
 

@@ -173,6 +173,15 @@ export default function DeviceDetail() {
         </Button>
         <Button
           size="sm"
+          variant="outline-warning"
+          disabled={!device.online || rebootDevice.isPending}
+          title={device.online ? 'Restart this device' : 'The device must be online'}
+          onClick={() => setConfirmReboot(true)}
+        >
+          {rebootDevice.isPending ? 'Queuing…' : 'Reboot'}
+        </Button>
+        <Button
+          size="sm"
           variant="outline-primary"
           disabled={!device.online}
           title={device.online ? 'Open a live view of this device' : 'The device must be online'}
@@ -188,15 +197,6 @@ export default function DeviceDetail() {
           onClick={() => navigate(`/devices/${device.id}/shell`)}
         >
           Shell
-        </Button>
-        <Button
-          size="sm"
-          variant="outline-warning"
-          disabled={!device.online || rebootDevice.isPending}
-          title={device.online ? 'Restart this device' : 'The device must be online'}
-          onClick={() => setConfirmReboot(true)}
-        >
-          {rebootDevice.isPending ? 'Queuing…' : 'Reboot'}
         </Button>
         <Button
           size="sm"

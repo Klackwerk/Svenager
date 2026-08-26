@@ -23,3 +23,7 @@ agent/svenager-agent
 .env
 *.local
 server/agent-dist/
+
+# Agent update signing key (offline private key — never commit)
+*.pem
+agent-update-key.pem

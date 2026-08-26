@@ -165,9 +165,14 @@ func fetchAndPrepare(ctx context.Context, client *api.Client, jobID string, p pl
 
 // renderPlaybook produces the local-execution playbook for the given roles.
 // Role names are embedded as JSON strings, which YAML accepts verbatim.
+//
+// force_handlers keeps notified handlers running even when a later task in
+// the play fails — without it a failed apply drops a pending restart (e.g.
+// the kiosk browser after a URL change), and the next, now-idempotent run
+// never re-notifies it, so the change silently never takes effect.
 func renderPlaybook(roles []string) ([]byte, error) {
 	var b strings.Builder
-	b.WriteString("- hosts: localhost\n  connection: local\n  become: true\n  roles:\n")
+	b.WriteString("- hosts: localhost\n  connection: local\n  become: true\n  force_handlers: true\n  roles:\n")
 	for _, role := range roles {
 		quoted, err := json.Marshal(role)
 		if err != nil {

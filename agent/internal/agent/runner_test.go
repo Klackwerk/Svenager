@@ -198,4 +198,7 @@ func TestRenderPlaybookQuotesRoleNames(t *testing.T) {
 	if !strings.Contains(text, `- "weird: name"`) {
 		t.Errorf("role name not quoted:\n%s", text)
 	}
+	if !strings.Contains(text, "force_handlers: true") {
+		t.Errorf("force_handlers not set — a failed task would drop pending restarts:\n%s", text)
+	}
 }

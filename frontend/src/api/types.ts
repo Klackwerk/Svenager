@@ -19,6 +19,7 @@ export interface UserInfo {
 export interface SearchResults {
   devices: Array<{ id: string; hostname: string; online: boolean; status: 'ACTIVE' | 'DISABLED' }>
   groups: GroupRef[]
+  roles: Array<{ id: string; name: string; displayName: string; repository: string; missing: boolean }>
   jobs: Array<{ id: string; hostname: string; status: string; type: string }>
 }
 

@@ -1,11 +1,12 @@
 import Alert from 'react-bootstrap/Alert'
 import Card from 'react-bootstrap/Card'
 import Spinner from 'react-bootstrap/Spinner'
-import { Link, Route, Routes } from 'react-router-dom'
+import { Link, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { useMe } from './api/hooks'
 import { ExpertModeProvider } from './lib/expertMode'
 import { useTheme } from './lib/theme'
-import AppNavbar from './components/AppNavbar'
+import AppSidebar from './components/AppSidebar'
+import JobModal from './components/JobModal'
 import Dashboard from './pages/Dashboard'
 import Devices from './pages/Devices'
 import DeviceDetail from './pages/DeviceDetail'
@@ -13,7 +14,6 @@ import Groups from './pages/Groups'
 import GroupDetail from './pages/GroupDetail'
 import AnsibleSources from './pages/AnsibleSources'
 import Jobs from './pages/Jobs'
-import JobDetail from './pages/JobDetail'
 import BatchDetail from './pages/BatchDetail'
 import Enrollment from './pages/Enrollment'
 import Alerting from './pages/Alerting'
@@ -33,6 +33,13 @@ function ExplainerCard({ title, text }: { title: string; text: string }) {
       </Card.Body>
     </Card>
   )
+}
+
+// Old bookmarks and notifications link to /jobs/:id; the job now opens
+// as a dialog over the jobs list.
+function LegacyJobRedirect() {
+  const { id } = useParams()
+  return <Navigate to={{ pathname: '/jobs', search: `?job=${encodeURIComponent(id ?? '')}` }} replace />
 }
 
 function NotFound() {
@@ -74,30 +81,33 @@ export default function App() {
 
   return (
     <ExpertModeProvider>
-      <AppNavbar user={user} theme={theme} />
-      <main className="container-fluid py-3 px-3 px-md-4">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/devices" element={<Devices />} />
-          <Route path="/devices/:id" element={<DeviceDetail />} />
-          <Route path="/devices/:id/remote" element={<RemoteView />} />
-          <Route path="/devices/:id/shell" element={<DeviceShell />} />
-          <Route path="/groups" element={<Groups />} />
-          <Route path="/groups/:id" element={<GroupDetail />} />
-          <Route path="/sources" element={<AnsibleSources />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/jobs/:id" element={<JobDetail />} />
-          <Route path="/batches/:id" element={<BatchDetail />} />
-          <Route path="/enrollment" element={<Enrollment />} />
-          <Route path="/users" element={user.roles.includes('ROLE_ADMIN') ? <Users /> : <AdminRequired />} />
-          <Route
-            path="/alerting"
-            element={user.roles.includes('ROLE_ADMIN') ? <Alerting /> : <AdminRequired />}
-          />
-          <Route path="/audit" element={user.roles.includes('ROLE_ADMIN') ? <Audit /> : <AdminRequired />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </main>
+      <div className="app-shell">
+        <AppSidebar user={user} theme={theme} />
+        <main className="app-main container-fluid py-3 px-3 px-md-4">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/devices" element={<Devices />} />
+            <Route path="/devices/:id" element={<DeviceDetail />} />
+            <Route path="/devices/:id/remote" element={<RemoteView />} />
+            <Route path="/devices/:id/shell" element={<DeviceShell />} />
+            <Route path="/groups" element={<Groups />} />
+            <Route path="/groups/:id" element={<GroupDetail />} />
+            <Route path="/sources" element={<AnsibleSources />} />
+            <Route path="/jobs" element={<Jobs />} />
+            <Route path="/jobs/:id" element={<LegacyJobRedirect />} />
+            <Route path="/batches/:id" element={<BatchDetail />} />
+            <Route path="/enrollment" element={<Enrollment />} />
+            <Route path="/users" element={user.roles.includes('ROLE_ADMIN') ? <Users /> : <AdminRequired />} />
+            <Route
+              path="/alerting"
+              element={user.roles.includes('ROLE_ADMIN') ? <Alerting /> : <AdminRequired />}
+            />
+            <Route path="/audit" element={user.roles.includes('ROLE_ADMIN') ? <Audit /> : <AdminRequired />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+        <JobModal />
+      </div>
     </ExpertModeProvider>
   )
 }

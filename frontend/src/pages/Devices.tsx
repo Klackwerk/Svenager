@@ -6,7 +6,8 @@ import Form from 'react-bootstrap/Form'
 import Modal from 'react-bootstrap/Modal'
 import Spinner from 'react-bootstrap/Spinner'
 import Table from 'react-bootstrap/Table'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import { useOpenJob } from '../lib/jobLink'
 import {
   useApplyDevice,
   useBulkAddToGroup,
@@ -28,7 +29,7 @@ import type { SortDirection } from '../lib/useSort'
 const PAGE_SIZE = 50
 
 export default function Devices() {
-  const navigate = useNavigate()
+  const openJob = useOpenJob()
   const toast = useToast()
   const deleteDevice = useDeleteDevice()
   const applyDevice = useApplyDevice()
@@ -347,7 +348,7 @@ export default function Devices() {
                     onClick={() =>
                       applyDevice.mutate(
                         { deviceId: device.id },
-                        { onSuccess: (job) => navigate(`/jobs/${job.id}`) },
+                        { onSuccess: (job) => openJob(job.id) },
                       )
                     }
                   >

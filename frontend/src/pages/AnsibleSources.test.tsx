@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { RepositorySummary } from '../api/types'
 import AnsibleSources from './AnsibleSources'
@@ -31,7 +32,9 @@ function renderSources() {
   vi.stubGlobal('fetch', fetchMock)
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <AnsibleSources />
+      <MemoryRouter>
+        <AnsibleSources />
+      </MemoryRouter>
     </QueryClientProvider>,
   )
   return fetchMock
@@ -105,7 +108,9 @@ describe('repository authentication', () => {
     vi.stubGlobal('fetch', fetchMock)
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <AnsibleSources />
+        <MemoryRouter>
+          <AnsibleSources />
+        </MemoryRouter>
       </QueryClientProvider>,
     )
     await screen.findByText('fleet-config')
@@ -136,7 +141,9 @@ describe('per-repository pending state', () => {
     )
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <AnsibleSources />
+        <MemoryRouter>
+          <AnsibleSources />
+        </MemoryRouter>
       </QueryClientProvider>,
     )
     await screen.findByText('fleet-config')

@@ -10,6 +10,7 @@ import Row from 'react-bootstrap/Row'
 import Spinner from 'react-bootstrap/Spinner'
 import Table from 'react-bootstrap/Table'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useJobLink, useOpenJob } from '../lib/jobLink'
 import {
   useApplyDevice,
   useDevice,
@@ -75,6 +76,8 @@ export default function DeviceDetail() {
     customLive.current = get
   }, [])
   const navigate = useNavigate()
+  const openJob = useOpenJob()
+  const jobLink = useJobLink()
 
   if (isLoading || !device) {
     return <Spinner role="status" aria-label="Loading device" />
@@ -204,7 +207,7 @@ export default function DeviceDetail() {
           disabled={previewDevice.isPending}
           title="Runs the configuration in check mode — shows what would change without changing anything"
           onClick={() =>
-            previewDevice.mutate(device.id, { onSuccess: (job) => navigate(`/jobs/${job.id}`) })
+            previewDevice.mutate(device.id, { onSuccess: (job) => openJob(job.id) })
           }
         >
           {previewDevice.isPending ? 'Queuing…' : 'Preview changes'}
@@ -219,7 +222,7 @@ export default function DeviceDetail() {
           <div className="flex-grow-1">
             <strong>Configuration is not applied.</strong> The last apply failed {latestApply.attempt} times and
             automatic retries are exhausted; nothing runs again until you apply or the configuration changes. Fix
-            the cause on the device (see the <Link to={`/jobs/${latestApply.id}`}>job log</Link>), then apply again.
+            the cause on the device (see the <Link to={jobLink(latestApply.id)}>job log</Link>), then apply again.
           </div>
           <Button size="sm" variant="warning" disabled={applyDevice.isPending} onClick={() => setConfirmApply(true)}>
             Apply configuration
@@ -453,7 +456,7 @@ export default function DeviceDetail() {
           applyDevice.mutate(
             { deviceId: device.id, runAfter },
             {
-              onSuccess: (job) => navigate(`/jobs/${job.id}`),
+              onSuccess: (job) => openJob(job.id),
               onSettled: () => setConfirmApply(false),
             },
           )
@@ -479,7 +482,7 @@ export default function DeviceDetail() {
               updateAgent.mutate(
                 { deviceId: device.id },
                 {
-                  onSuccess: (job) => navigate(`/jobs/${job.id}`),
+                  onSuccess: (job) => openJob(job.id),
                   onSettled: () => setConfirmAgentUpdate(false),
                 },
               )
@@ -507,7 +510,7 @@ export default function DeviceDetail() {
             disabled={rebootDevice.isPending}
             onClick={() =>
               rebootDevice.mutate(device.id, {
-                onSuccess: (job) => navigate(`/jobs/${job.id}`),
+                onSuccess: (job) => openJob(job.id),
                 onSettled: () => setConfirmReboot(false),
               })
             }

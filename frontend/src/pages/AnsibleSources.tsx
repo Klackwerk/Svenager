@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import Accordion from 'react-bootstrap/Accordion'
 import Alert from 'react-bootstrap/Alert'
 import Badge from 'react-bootstrap/Badge'
@@ -10,6 +10,7 @@ import Modal from 'react-bootstrap/Modal'
 import Row from 'react-bootstrap/Row'
 import Spinner from 'react-bootstrap/Spinner'
 import Table from 'react-bootstrap/Table'
+import { useSearchParams } from 'react-router-dom'
 import {
   useCreateRepository,
   useDeleteRepository,
@@ -224,16 +225,29 @@ const STATUS: Record<RepositorySummary['syncStatus'], { label: string; bg: strin
   ERROR: { label: 'Sync failed', bg: 'danger' },
 }
 
+// Roles of one repository; `?role=<id>` (from the global search) opens
+// that role and scrolls it into view.
 function RepositoryRoles({ repositoryId }: { repositoryId: string }) {
   const { data: roles, isLoading } = useRepositoryRoles(repositoryId)
+  const [params] = useSearchParams()
+  const highlighted = params.get('role')
+  const highlightedRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    highlightedRef.current?.scrollIntoView({ block: 'start' })
+  }, [roles, highlighted])
 
   if (isLoading) return <Spinner size="sm" role="status" aria-label="Loading roles" />
   if (!roles || roles.length === 0) return <p className="text-secondary mb-0">No roles discovered yet — run a sync.</p>
 
   return (
-    <Accordion alwaysOpen>
+    <Accordion alwaysOpen defaultActiveKey={highlighted ? [highlighted] : []}>
       {roles.map((role) => (
-        <Accordion.Item key={role.id} eventKey={String(role.id)}>
+        <Accordion.Item
+          key={role.id}
+          eventKey={String(role.id)}
+          ref={role.id === highlighted ? highlightedRef : undefined}
+        >
           <Accordion.Header>
             <span>
               {role.displayName}

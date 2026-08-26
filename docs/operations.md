@@ -71,7 +71,7 @@ reconstructible but faster to restore than to rebuild.
 - Alerting page (admin): email/webhook channels for device-offline,
   exhausted apply retries and repo-sync failures.
 - Exhausted apply retries (`svenager.jobs.maxAttempts`, default 3) are
-  flagged on the device and job pages; the device stays unconverged until
+  flagged on the device page and in the job dialog; the device stays unconverged until
   an operator presses "Apply configuration" / "Re-run" (fresh attempt
   counter) or the composed configuration changes.
 - Audit page (admin): sign-ins and every administrative change.

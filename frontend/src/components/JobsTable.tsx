@@ -2,6 +2,7 @@ import Badge from 'react-bootstrap/Badge'
 import Table from 'react-bootstrap/Table'
 import { Link } from 'react-router-dom'
 import type { JobSummary } from '../api/types'
+import { useJobLink } from '../lib/jobLink'
 import { absoluteTime, relativeTime } from '../lib/time'
 import { timeValue, useSort } from '../lib/useSort'
 import JobStatusBadge from './JobStatusBadge'
@@ -16,6 +17,7 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 export default function JobsTable({ jobs, showDevice = true }: { jobs: JobSummary[]; showDevice?: boolean }) {
+  const jobLink = useJobLink()
   const sort = useSort(
     jobs,
     {
@@ -40,7 +42,7 @@ export default function JobsTable({ jobs, showDevice = true }: { jobs: JobSummar
           <SortHeader label="Queued" sortKey="queued" sort={sort} />
           <SortHeader label="Finished" sortKey="finished" sort={sort} />
           <SortHeader label="Triggered by" sortKey="triggeredBy" sort={sort} />
-          <th aria-label="Details" />
+          <th aria-label="Log" />
         </tr>
       </thead>
       <tbody>
@@ -68,7 +70,7 @@ export default function JobsTable({ jobs, showDevice = true }: { jobs: JobSummar
             <td title={absoluteTime(job.finishedAt)}>{relativeTime(job.finishedAt)}</td>
             <td>{job.triggeredBy ?? '—'}</td>
             <td className="text-end">
-              <Link to={`/jobs/${job.id}`}>Details</Link>
+              <Link to={jobLink(job.id)}>Log</Link>
             </td>
           </tr>
         ))}

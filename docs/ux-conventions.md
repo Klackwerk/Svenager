@@ -51,7 +51,9 @@ read YAML, playbooks or inventories.
   coercion. Saving is blocked while a value is invalid.
 - Dirty forms prompt before navigation (`NavigationGuard`).
 - Never render YAML/JSON to non-experts: raw variables, commit hashes and
-  similar plumbing live behind the persisted "Expert" toggle.
+  similar plumbing live behind the persisted "Expert details" switch in the
+  account menu. Where something is hidden, say so inline and offer a link
+  that turns the switch on (see the job dialog).
 
 ## Accessibility
 

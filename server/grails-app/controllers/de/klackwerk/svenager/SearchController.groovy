@@ -3,8 +3,9 @@ package de.klackwerk.svenager
 import grails.converters.JSON
 
 /**
- * Global navbar search: devices by hostname/id, groups by name, jobs by
- * numeric id. Results respect the caller's group scope.
+ * Global search: devices by hostname/id, groups by name, Ansible roles by
+ * name, jobs by id prefix. Device and group results respect the caller's
+ * group scope; roles are visible to everyone who can read repositories.
  */
 class SearchController {
 
@@ -16,7 +17,7 @@ class SearchController {
     def index() {
         String q = params.q?.toString()?.trim()
         if (!q || q.length() < 2) {
-            render([devices: [], groups: [], jobs: []] as JSON)
+            render([devices: [], groups: [], roles: [], jobs: []] as JSON)
             return
         }
         Set<Long> deviceScope = accessService.visibleDeviceIds()
@@ -49,6 +50,14 @@ class SearchController {
             order('name', 'asc')
         } as List<DeviceGroup>
 
+        List<DiscoveredRole> roles = DiscoveredRole.createCriteria().list(max: 5) {
+            or {
+                ilike('name', "%${q}%")
+                ilike('displayName', "%${q}%")
+            }
+            order('name', 'asc')
+        } as List<DiscoveredRole>
+
         List<Job> jobs = []
         if (q.length() >= 4) {
             Job job = (Job.createCriteria().list(max: 1) {
@@ -65,6 +74,10 @@ class SearchController {
                      status: it.status.name()]
                 },
                 groups : groups.collect { [id: it.uuid, name: it.name] },
+                roles  : roles.collect {
+                    [id: it.uuid, name: it.name, displayName: it.displayName ?: it.name,
+                     repository: it.repository.name, missing: it.missing]
+                },
                 jobs   : jobs.collect {
                     [id: it.uuid, hostname: it.device.hostname, status: it.status.name(),
                      type: it.type.name()]

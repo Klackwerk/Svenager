@@ -67,6 +67,13 @@ class RepoSyncIntegrationSpec extends Specification {
             true
         }
 
+        and: 'the global search finds the role by name'
+        ApiClient admin = new ApiClient(serverPort)
+        admin.login('admin', 'admin')
+        admin.request('GET', '/api/v1/search?q=kios').body.roles.any {
+            it.name == 'kiosk' && it.repository == synced.name && !it.missing
+        }
+
         when: 'a role disappears upstream and we sync again'
         assert new File(upstream, 'roles/kiosk').deleteDir()
         gitInUpstream('add', '-A')

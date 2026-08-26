@@ -162,7 +162,7 @@ export default function GroupDetail() {
                       <Badge bg={device.online ? 'success' : 'danger'} className="me-2">
                         {device.online ? 'Online' : 'Offline'}
                       </Badge>
-                      {device.hostname}
+                      <Link to={`/devices/${device.id}`}>{device.hostname}</Link>
                     </span>
                     <Button
                       size="sm"

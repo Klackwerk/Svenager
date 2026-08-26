@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Group page: device names link straight to the device.
 - Git URLs like `https://host:group/repo.git` are rejected with the corrected URL as hint.
 - Pushes to `main` build the `latest` server and frontend images.
 - Kiosk URL changes take effect reliably: the role self-heals to the configured URL, and a failed apply no longer drops the pending browser restart (`force_handlers`).

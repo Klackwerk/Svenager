@@ -70,6 +70,15 @@ class JobService {
                 .save(failOnError: true)
     }
 
+    /** Queues a reboot job unless one is already pending. */
+    Job enqueueReboot(Device device, String triggeredBy) {
+        Job pending = Job.findByDeviceAndTypeAndStatus(device, JobType.REBOOT, JobStatus.PENDING)
+        if (pending) {
+            return pending
+        }
+        new Job(device: device, type: JobType.REBOOT, triggeredBy: triggeredBy).save(failOnError: true)
+    }
+
     /**
      * Fans out one apply per group member, tracked as one batch. In canary
      * mode only the most recently seen device gets the job; the rest follow

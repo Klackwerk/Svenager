@@ -19,6 +19,7 @@ import {
   useJobs,
   useMe,
   usePreviewDevice,
+  useRebootDevice,
   useRenameDevice,
   useReplaceDeviceVariables,
   useSetDeviceGroups,
@@ -54,12 +55,14 @@ export default function DeviceDetail() {
   const renameDevice = useRenameDevice(id ?? '')
   const setStatus = useSetDeviceStatus()
   const updateAgent = useUpdateAgent()
+  const rebootDevice = useRebootDevice()
   const [confirmAgentUpdate, setConfirmAgentUpdate] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [nameDraft, setNameDraft] = useState('')
   const [pendingGroupId, setPendingGroupId] = useState<string | null>(null)
   const [confirmDisable, setConfirmDisable] = useState(false)
   const [confirmApply, setConfirmApply] = useState(false)
+  const [confirmReboot, setConfirmReboot] = useState(false)
   const { data: me } = useMe()
   // Live getters so saving one variable editor never clobbers the other's
   // unsaved edits (both PUT the full variable set).
@@ -176,6 +179,24 @@ export default function DeviceDetail() {
           onClick={() => navigate(`/devices/${device.id}/remote`)}
         >
           Remote view
+        </Button>
+        <Button
+          size="sm"
+          variant="outline-primary"
+          disabled={!device.online}
+          title={device.online ? 'Open a shell on this device' : 'The device must be online'}
+          onClick={() => navigate(`/devices/${device.id}/shell`)}
+        >
+          Shell
+        </Button>
+        <Button
+          size="sm"
+          variant="outline-warning"
+          disabled={!device.online || rebootDevice.isPending}
+          title={device.online ? 'Restart this device' : 'The device must be online'}
+          onClick={() => setConfirmReboot(true)}
+        >
+          {rebootDevice.isPending ? 'Queuing…' : 'Reboot'}
         </Button>
         <Button
           size="sm"
@@ -465,6 +486,33 @@ export default function DeviceDetail() {
             }
           >
             {updateAgent.isPending ? 'Queuing…' : 'Update agent'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={confirmReboot} onHide={() => setConfirmReboot(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Reboot device?</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          At its next check-in, <strong>{device.hostname}</strong> restarts. It goes offline for the duration of
+          the reboot and reconnects on its own afterwards.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setConfirmReboot(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="warning"
+            disabled={rebootDevice.isPending}
+            onClick={() =>
+              rebootDevice.mutate(device.id, {
+                onSuccess: (job) => navigate(`/jobs/${job.id}`),
+                onSettled: () => setConfirmReboot(false),
+              })
+            }
+          >
+            {rebootDevice.isPending ? 'Queuing…' : 'Reboot device'}
           </Button>
         </Modal.Footer>
       </Modal>

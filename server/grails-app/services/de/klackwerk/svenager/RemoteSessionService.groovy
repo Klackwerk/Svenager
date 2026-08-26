@@ -23,7 +23,7 @@ class RemoteSessionService {
      * operators can watch one device side by side; only the requester's own
      * not-yet-attached session is reused (e.g. a double-mounted UI).
      */
-    RemoteSession open(Device device, String requestedBy) {
+    RemoteSession open(Device device, String requestedBy, RemoteSessionKind kind = RemoteSessionKind.VNC) {
         // Serialize concurrent opens per device (e.g. a double-mounted UI),
         // or both would pass the reuse check and create two sessions.
         try {
@@ -32,18 +32,25 @@ class RemoteSessionService {
             // the in-memory unit-test datastore has no row locks
         }
         expireStale()
-        RemoteSession existing = RemoteSession.findByDeviceAndRequestedByAndStatusInList(device, requestedBy,
-                [RemoteSessionStatus.PENDING, RemoteSessionStatus.AGENT_CONNECTED])
+        RemoteSession existing = RemoteSession.findByDeviceAndRequestedByAndKindAndStatusInList(device, requestedBy,
+                kind, [RemoteSessionStatus.PENDING, RemoteSessionStatus.AGENT_CONNECTED])
         if (existing) {
             return existing
         }
         RemoteSession session = new RemoteSession(
                 device: device,
                 requestedBy: requestedBy,
+                kind: kind,
                 expiresAt: new Date(System.currentTimeMillis() + maxSessionSeconds * 1000L),
         ).save(failOnError: true)
+        Map payload = [sessionId: session.uuid]
+        if (kind == RemoteSessionKind.SHELL) {
+            payload.shell = true
+        } else {
+            payload.vncPort = vncPort
+        }
         new Job(device: device, type: JobType.OPEN_TUNNEL, triggeredBy: requestedBy,
-                payloadJson: JsonOutput.toJson([sessionId: session.uuid, vncPort: vncPort]))
+                payloadJson: JsonOutput.toJson(payload))
                 .save(failOnError: true)
         session
     }

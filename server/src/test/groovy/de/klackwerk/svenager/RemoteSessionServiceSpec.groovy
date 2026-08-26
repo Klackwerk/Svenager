@@ -31,6 +31,42 @@ class RemoteSessionServiceSpec extends Specification implements ServiceUnitTest<
         Job.first().payloadJson.contains('5900')
     }
 
+    void "openShell creates a SHELL session whose job asks for a shell, not VNC"() {
+        given:
+        Device d = device()
+
+        when:
+        RemoteSession session = service.open(d, 'admin', RemoteSessionKind.SHELL)
+
+        then:
+        session.kind == RemoteSessionKind.SHELL
+        Job.count() == 1
+        Job.first().type == JobType.OPEN_TUNNEL
+        Job.first().payloadJson.contains(session.uuid)
+        Job.first().payloadJson.contains('"shell":true')
+        !Job.first().payloadJson.contains('5900')
+    }
+
+    void "a VNC and a shell session for one viewer do not collide"() {
+        given:
+        Device d = device()
+
+        when:
+        RemoteSession vnc = service.open(d, 'admin')
+        RemoteSession shell = service.open(d, 'admin', RemoteSessionKind.SHELL)
+
+        then: 'different sessions, one job each'
+        vnc.uuid != shell.uuid
+        vnc.kind == RemoteSessionKind.VNC
+        shell.kind == RemoteSessionKind.SHELL
+        Job.count() == 2
+
+        and: 'each kind reuses its own pending session'
+        service.open(d, 'admin').uuid == vnc.uuid
+        service.open(d, 'admin', RemoteSessionKind.SHELL).uuid == shell.uuid
+        Job.count() == 2
+    }
+
     void "open reuses the device's existing open session"() {
         given:
         Device d = device()

@@ -251,6 +251,7 @@ export interface RemoteSessionInfo {
   deviceId: string
   hostname: string
   status: 'PENDING' | 'AGENT_CONNECTED' | 'ACTIVE' | 'CLOSED'
+  kind: 'VNC' | 'SHELL'
   requestedBy: string | null
   createdAt: string | null
   expiresAt: string | null

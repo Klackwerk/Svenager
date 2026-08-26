@@ -7,7 +7,7 @@ class DeviceController {
 
     static allowedMethods = [index: 'GET', show: 'GET', update: 'PUT', delete: 'DELETE', setGroups: 'PUT',
                              variables: 'GET', replaceVariables: 'PUT', effectiveRoles: 'GET', apply: 'POST',
-                             preview: 'POST', updateAgent: 'POST']
+                             preview: 'POST', updateAgent: 'POST', reboot: 'POST']
 
     CheckinService checkinService
     GroupService groupService
@@ -236,6 +236,24 @@ class DeviceController {
         }
         auditService.record('agent-update-queued', 'device', device.uuid,
                 "queued agent update on '${device.hostname}'${version ? " to ${version}" : ''}")
+        response.status = 201
+        render(JobController.summarize(job) as JSON)
+    }
+
+    /** Queues a reboot of the device. */
+    def reboot(String id) {
+        Device device = visibleDevice(id)
+        if (device == null) {
+            respondError(404, 'device not found')
+            return
+        }
+        Job job = null
+        Device.withTransaction {
+            job = jobService.enqueueReboot(device,
+                    org.springframework.security.core.context.SecurityContextHolder.context?.authentication?.name)
+        }
+        auditService.record('device-reboot-queued', 'device', device.uuid,
+                "queued reboot on '${device.hostname}'")
         response.status = 201
         render(JobController.summarize(job) as JSON)
     }

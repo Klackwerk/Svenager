@@ -67,6 +67,26 @@ class JobServiceSpec extends Specification implements ServiceUnitTest<JobService
         base.baseRole && !gone.baseRole
     }
 
+    void "enqueueReboot creates one job and dedupes a pending reboot"() {
+        given:
+        Device d = device()
+
+        when:
+        Job first = service.enqueueReboot(d, 'admin')
+
+        then:
+        first.type == JobType.REBOOT
+        first.status == JobStatus.PENDING
+        first.triggeredBy == 'admin'
+
+        when: 'a reboot is already pending'
+        Job second = service.enqueueReboot(d, 'someone-else')
+
+        then: 'the pending one is returned, not a duplicate'
+        second.id == first.id
+        Job.countByDeviceAndType(d, JobType.REBOOT) == 1
+    }
+
     void "composeSpec merges variables with device overriding groups"() {
         given:
         Device d = device()

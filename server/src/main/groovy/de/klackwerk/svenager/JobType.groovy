@@ -10,5 +10,7 @@ enum JobType {
     /** Agent replaces itself with the signed binary from the server. */
     AGENT_UPDATE,
     PING,
-    OPEN_TUNNEL
+    OPEN_TUNNEL,
+    /** Agent reboots the device. */
+    REBOOT
 }

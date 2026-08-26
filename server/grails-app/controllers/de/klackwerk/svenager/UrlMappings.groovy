@@ -56,6 +56,7 @@ class UrlMappings {
         post "/api/v1/devices/$id/apply"(controller: 'device', action: 'apply')
         post "/api/v1/devices/$id/preview"(controller: 'device', action: 'preview')
         post "/api/v1/devices/$id/update-agent"(controller: 'device', action: 'updateAgent')
+        post "/api/v1/devices/$id/reboot"(controller: 'device', action: 'reboot')
         post "/api/v1/groups/$id/apply"(controller: 'group', action: 'apply')
         get "/api/v1/dashboard"(controller: 'dashboard', action: 'index')
         get "/api/v1/search"(controller: 'search', action: 'index')
@@ -70,6 +71,7 @@ class UrlMappings {
         get "/api/v1/groups/$id/batches"(controller: 'jobBatch', action: 'forGroup')
 
         post "/api/v1/devices/$id/remote-session"(controller: 'remoteSession', action: 'open')
+        post "/api/v1/devices/$id/shell-session"(controller: 'remoteSession', action: 'openShell')
         get "/api/v1/devices/$id/remote-sessions"(controller: 'remoteSession', action: 'forDevice')
         get "/api/v1/remote-sessions/$id"(controller: 'remoteSession', action: 'show')
         delete "/api/v1/remote-sessions/$id"(controller: 'remoteSession', action: 'close')

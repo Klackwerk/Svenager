@@ -7,7 +7,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 /** UI endpoints for remote-view (VNC) sessions and their audit trail. */
 class RemoteSessionController {
 
-    static allowedMethods = [open: 'POST', show: 'GET', close: 'DELETE', forDevice: 'GET']
+    static allowedMethods = [open: 'POST', openShell: 'POST', show: 'GET', close: 'DELETE', forDevice: 'GET']
 
     RemoteSessionService remoteSessionService
     TunnelBroker tunnelBroker
@@ -27,6 +27,18 @@ class RemoteSessionController {
             return
         }
         RemoteSession session = remoteSessionService.open(device, currentUsername())
+        response.status = 201
+        render(summarize(session) as JSON)
+    }
+
+    /** POST /devices/{id}/shell-session — opens (or reuses) a shell session. */
+    def openShell(String id) {
+        Device device = visibleDevice(id)
+        if (device == null) {
+            respondError(404, 'device not found')
+            return
+        }
+        RemoteSession session = remoteSessionService.open(device, currentUsername(), RemoteSessionKind.SHELL)
         response.status = 201
         render(summarize(session) as JSON)
     }
@@ -72,6 +84,7 @@ class RemoteSessionController {
                 deviceId         : session.device.uuid,
                 hostname         : session.device.hostname,
                 status           : session.status.name(),
+                kind             : session.kind.name(),
                 requestedBy      : session.requestedBy,
                 createdAt        : session.dateCreated?.toInstant()?.toString(),
                 expiresAt        : session.expiresAt?.toInstant()?.toString(),

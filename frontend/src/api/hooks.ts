@@ -628,6 +628,16 @@ export function useUpdateAgent() {
   })
 }
 
+export function useRebootDevice() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (deviceId: string) =>
+      api<JobSummary>(`/api/v1/devices/${deviceId}/reboot`, { method: 'POST' }),
+    meta: { errorMessage: 'The reboot could not be queued.' },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['jobs'] }),
+  })
+}
+
 export function usePreviewDevice() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -708,6 +718,18 @@ export function useOpenRemoteSession(deviceId: string | null) {
     queryKey: ['remote-sessions', 'open', deviceId],
     queryFn: () =>
       api<RemoteSessionInfo>(`/api/v1/devices/${deviceId}/remote-session`, { method: 'POST' }),
+    enabled: deviceId != null,
+    staleTime: Infinity,
+    gcTime: 0,
+    retry: false,
+  })
+}
+
+export function useOpenShellSession(deviceId: string | null) {
+  return useQuery<RemoteSessionInfo>({
+    queryKey: ['remote-sessions', 'shell', deviceId],
+    queryFn: () =>
+      api<RemoteSessionInfo>(`/api/v1/devices/${deviceId}/shell-session`, { method: 'POST' }),
     enabled: deviceId != null,
     staleTime: Infinity,
     gcTime: 0,

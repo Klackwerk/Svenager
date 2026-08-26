@@ -79,12 +79,35 @@ func runJob(ctx context.Context, cfg *config.Config, client *api.Client, job *ap
 	case "PING":
 		reporter.log("pong\n")
 		exitCode = 0
+	case "REBOOT":
+		exitCode = runReboot(ctx, reporter)
 	default:
 		reporter.log(fmt.Sprintf("unknown job type %q\n", job.Type))
 	}
 
 	reporter.send(api.JobEvent{Event: "finished", ExitCode: &exitCode})
 	logger.Info("job finished", "exitCode", exitCode)
+}
+
+// runReboot restarts the device. systemctl reboot schedules the shutdown and
+// returns promptly, so the finished event still reaches the server before the
+// network drops; the plain reboot binary is the fallback for non-systemd hosts.
+func runReboot(ctx context.Context, reporter *eventReporter) int {
+	reporter.log("reboot requested — the device will restart\n")
+	var lastErr error
+	for _, argv := range [][]string{{"systemctl", "reboot"}, {"reboot"}} {
+		if _, err := exec.LookPath(argv[0]); err != nil {
+			lastErr = err
+			continue
+		}
+		out, err := exec.CommandContext(ctx, argv[0], argv[1:]...).CombinedOutput()
+		if err == nil {
+			return 0
+		}
+		lastErr = fmt.Errorf("%s: %v: %s", argv[0], err, strings.TrimSpace(string(out)))
+	}
+	reporter.log("reboot failed: " + lastErr.Error() + "\n")
+	return 1
 }
 
 func runApply(ctx context.Context, cfg *config.Config, client *api.Client, job *api.Job, reporter *eventReporter, checkMode bool) int {

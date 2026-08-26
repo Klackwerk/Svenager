@@ -202,3 +202,40 @@ func TestRenderPlaybookQuotesRoleNames(t *testing.T) {
 		t.Errorf("force_handlers not set — a failed task would drop pending restarts:\n%s", text)
 	}
 }
+
+func TestRunJobRebootInvokesSystemctl(t *testing.T) {
+	client, cfg, captured := setupJobServer(t, nil)
+
+	// A fake systemctl on PATH: record the call and exit 0.
+	dir := t.TempDir()
+	marker := filepath.Join(dir, "called")
+	script := "#!/bin/sh\necho \"$@\" > " + marker + "\nexit 0\n"
+	if err := os.WriteFile(filepath.Join(dir, "systemctl"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir)
+
+	runJob(context.Background(), cfg, client, &api.Job{ID: "70", Type: "REBOOT"})
+
+	if exit, ok := captured.finalExit(); !ok || exit != 0 {
+		t.Fatalf("expected finished with exit 0, got %v %v", exit, ok)
+	}
+	got, err := os.ReadFile(marker)
+	if err != nil || strings.TrimSpace(string(got)) != "reboot" {
+		t.Errorf("systemctl not called with reboot: %q err=%v", got, err)
+	}
+}
+
+func TestRunJobRebootReportsFailureWhenNoRebootTool(t *testing.T) {
+	client, cfg, captured := setupJobServer(t, nil)
+	t.Setenv("PATH", t.TempDir()) // neither systemctl nor reboot present
+
+	runJob(context.Background(), cfg, client, &api.Job{ID: "71", Type: "REBOOT"})
+
+	if exit, ok := captured.finalExit(); !ok || exit != 1 {
+		t.Fatalf("expected finished with exit 1, got %v %v", exit, ok)
+	}
+	if log := captured.log(); !strings.Contains(log, "reboot failed") {
+		t.Errorf("missing reboot-failure notice:\n%s", log)
+	}
+}

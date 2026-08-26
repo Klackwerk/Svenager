@@ -10,6 +10,7 @@ class RemoteSession {
     String uuid = UUID.randomUUID().toString()
     Device device
     String requestedBy
+    RemoteSessionKind kind = RemoteSessionKind.VNC
     RemoteSessionStatus status = RemoteSessionStatus.PENDING
     Date dateCreated
     Date expiresAt
@@ -29,6 +30,7 @@ class RemoteSession {
 
     static mapping = {
         status enumType: 'string'
+        kind enumType: 'string'
     }
 
     boolean isExpired() {

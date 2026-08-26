@@ -26,6 +26,7 @@ function session(status: RemoteSessionInfo['status']): RemoteSessionInfo {
     deviceId: 'dev-1',
     hostname: 'kiosk-01',
     status,
+    kind: 'VNC',
     requestedBy: 'admin',
     createdAt: new Date().toISOString(),
     expiresAt: new Date(Date.now() + 600_000).toISOString(),

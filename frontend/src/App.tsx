@@ -19,6 +19,7 @@ import Enrollment from './pages/Enrollment'
 import Alerting from './pages/Alerting'
 import Audit from './pages/Audit'
 import Login from './pages/Login'
+import DeviceShell from './pages/DeviceShell'
 import RemoteView from './pages/RemoteView'
 import Users from './pages/Users'
 
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="/devices" element={<Devices />} />
           <Route path="/devices/:id" element={<DeviceDetail />} />
           <Route path="/devices/:id/remote" element={<RemoteView />} />
+          <Route path="/devices/:id/shell" element={<DeviceShell />} />
           <Route path="/groups" element={<Groups />} />
           <Route path="/groups/:id" element={<GroupDetail />} />
           <Route path="/sources" element={<AnsibleSources />} />

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Per-device Reboot button.
+- Browser shell: open an interactive terminal on a device over the audited reverse tunnel.
 - Group page: device names link straight to the device.
 - Git URLs like `https://host:group/repo.git` are rejected with the corrected URL as hint.
 - Pushes to `main` build the `latest` server and frontend images.

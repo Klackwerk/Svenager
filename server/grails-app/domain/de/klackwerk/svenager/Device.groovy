@@ -9,6 +9,9 @@ class Device {
     String factsJson
     DeviceStatus status = DeviceStatus.ACTIVE
     Date lastContactAt
+    /** Address reported by the agent (its interface towards the server). */
+    String ip
+    /** Address the server saw the last check-in from (NAT/proxy hop). */
     String lastIp
     Date lastJobAt
     /** Set while an offline alert is standing; cleared by the recovery. */
@@ -22,6 +25,7 @@ class Device {
         tokenHash unique: true
         factsJson nullable: true
         lastContactAt nullable: true
+        ip nullable: true, maxSize: 64
         lastIp nullable: true, maxSize: 64
         lastJobAt nullable: true
         offlineAlertedAt nullable: true

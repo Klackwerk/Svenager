@@ -334,7 +334,17 @@ export default function Devices() {
                         </span>
                       ))}
                 </td>
-                <td>{device.lastIp ? <code>{device.lastIp}</code> : '—'}</td>
+                <td>
+                  {device.ip ? (
+                    <code>{device.ip}</code>
+                  ) : device.lastIp ? (
+                    <code className="text-secondary" title="Seen by the server; the agent did not report its own address">
+                      {device.lastIp}
+                    </code>
+                  ) : (
+                    '—'
+                  )}
+                </td>
                 <td title={absoluteTime(device.lastContactAt)}>{relativeTime(device.lastContactAt)}</td>
                 <td title={absoluteTime(device.lastJobAt)}>{relativeTime(device.lastJobAt)}</td>
                 <td>{device.agentVersion ?? '—'}</td>

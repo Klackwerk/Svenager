@@ -22,7 +22,7 @@ class DeviceController {
     }
 
     private static final Map<String, String> SORTABLE = [
-            hostname: 'hostname', ip: 'lastIp', lastContact: 'lastContactAt',
+            hostname: 'hostname', ip: 'ip', lastContact: 'lastContactAt',
             lastJob: 'lastJobAt', agent: 'agentVersion', enrolled: 'dateCreated',
     ].asImmutable()
 
@@ -316,6 +316,7 @@ class DeviceController {
                 online       : checkinService.isOnline(device),
                 agentVersion : device.agentVersion,
                 lastContactAt: device.lastContactAt?.toInstant()?.toString(),
+                ip           : device.ip,
                 lastIp       : device.lastIp,
                 lastJobAt    : device.lastJobAt?.toInstant()?.toString(),
                 enrolledAt   : device.dateCreated?.toInstant()?.toString(),

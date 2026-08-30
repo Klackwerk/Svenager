@@ -28,8 +28,9 @@ class InventoryController {
         Map hostvars = [:]
         devices.each { Device device ->
             Map vars = [svenager_device_id: device.uuid]
-            if (device.lastIp) {
-                vars.ansible_host = device.lastIp
+            String address = device.ip ?: device.lastIp
+            if (address) {
+                vars.ansible_host = address
             }
             hostvars[device.hostname] = vars
         }

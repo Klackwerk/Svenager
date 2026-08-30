@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Devices show the IP address the agent reports; the server-seen address is listed as "Seen from".
 - Golden-image script for clonable Raspberry Pi SD cards.
 - Job details and logs open in a dialog
 - Navigation moved to a left sidebar with grouped sections and icons.

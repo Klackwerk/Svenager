@@ -24,7 +24,7 @@ func RegisterAndWait(ctx context.Context, serverURL, configPath string, interval
 		resp, err := api.Register(ctx, serverURL, api.RegisterRequest{
 			RequestID: requestID,
 			Hostname:  hostname,
-			Facts:     collectFacts(),
+			Facts:     collectFacts(serverURL),
 		})
 		switch {
 		case err != nil && ctx.Err() != nil:

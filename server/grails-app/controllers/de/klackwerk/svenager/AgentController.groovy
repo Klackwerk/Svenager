@@ -2,6 +2,7 @@ package de.klackwerk.svenager
 
 import de.klackwerk.svenager.security.DeviceTokenAuthFilter
 import grails.converters.JSON
+import grails.core.GrailsApplication
 
 /** Endpoints called by enrolled device agents (authenticated by device token). */
 class AgentController {
@@ -11,6 +12,7 @@ class AgentController {
     CheckinService checkinService
     JobService jobService
     RepoSyncService repoSyncService
+    GrailsApplication grailsApplication
 
     def checkin() {
         Device device = Device.get(request.getAttribute(DeviceTokenAuthFilter.DEVICE_ID_ATTRIBUTE) as Long)
@@ -20,13 +22,28 @@ class AgentController {
             return
         }
         def body = request.JSON
-        String remoteIp = request.getHeader('X-Forwarded-For')?.tokenize(',')?.first()?.trim() ?: request.remoteAddr
         Map result = checkinService.checkin(
                 device,
                 body?.agentVersion as String,
                 body?.facts instanceof Map ? body.facts as Map : null,
-                remoteIp)
+                remoteAddress())
         render(result as JSON)
+    }
+
+    /**
+     * X-Forwarded-For is only honored behind a declared trusted proxy —
+     * otherwise a device could record any address it likes.
+     */
+    private String remoteAddress() {
+        boolean trustForwarded = grailsApplication.config.getProperty(
+                'svenager.rateLimit.trustForwardedFor', Boolean, false)
+        if (trustForwarded) {
+            String forwarded = request.getHeader('X-Forwarded-For')?.tokenize(',')?.first()?.trim()
+            if (forwarded) {
+                return forwarded
+            }
+        }
+        request.remoteAddr
     }
 
     def events(String id) {

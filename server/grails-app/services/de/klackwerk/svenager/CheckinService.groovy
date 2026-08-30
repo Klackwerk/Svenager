@@ -29,6 +29,9 @@ class CheckinService {
             if (facts.hostname && !device.hostname) {
                 device.hostname = facts.hostname as String
             }
+            if (facts.ip) {
+                device.ip = (facts.ip as String).take(64)
+            }
         }
         device.save(failOnError: true)
         [pollIntervalSeconds: effectivePollIntervalSeconds(device), job: jobService.deliverNext(device)]

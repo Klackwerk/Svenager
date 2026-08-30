@@ -45,6 +45,9 @@ export interface DeviceSummary {
   online: boolean
   agentVersion: string | null
   lastContactAt: string | null
+  /** Address the agent reports for itself. */
+  ip: string | null
+  /** Address the server saw the last check-in from (NAT/proxy). */
   lastIp: string | null
   lastJobAt: string | null
   enrolledAt: string | null

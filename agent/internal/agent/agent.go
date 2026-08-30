@@ -5,9 +5,12 @@ import (
 	"context"
 	"log/slog"
 	"math/rand/v2"
+	"net"
+	"net/url"
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -29,7 +32,7 @@ func Enroll(serverURL, enrollmentToken, configPath string) error {
 	resp, err := api.Enroll(ctx, serverURL, api.EnrollRequest{
 		EnrollmentToken: enrollmentToken,
 		Hostname:        hostname,
-		Facts:           collectFacts(),
+		Facts:           collectFacts(serverURL),
 	})
 	if err != nil {
 		return err
@@ -60,7 +63,7 @@ func Run(cfg *config.Config, client *api.Client) error {
 	startWatchdog(ctx)
 	defer sdNotify("STOPPING=1")
 	for {
-		resp, err := client.Checkin(ctx, api.CheckinRequest{Facts: collectFacts()})
+		resp, err := client.Checkin(ctx, api.CheckinRequest{Facts: collectFacts(cfg.ServerURL)})
 		switch {
 		case err != nil && ctx.Err() != nil:
 			slog.Info("agent stopping")
@@ -104,7 +107,9 @@ func nextDelay(base time.Duration, failures int) time.Duration {
 	return time.Duration(float64(d) * jitter)
 }
 
-func collectFacts() map[string]string {
+// collectFacts describes this device; "ip" is the local address the
+// server is reached from — what the server sees is often just the NAT.
+func collectFacts(serverURL string) map[string]string {
 	facts := map[string]string{
 		"os":   runtime.GOOS,
 		"arch": runtime.GOARCH,
@@ -115,5 +120,63 @@ func collectFacts() map[string]string {
 	if data, err := os.ReadFile("/etc/os-release"); err == nil && len(data) < 8192 {
 		facts["os_release"] = string(data)
 	}
+	if ip := primaryIP(serverURL); ip != "" {
+		facts["ip"] = ip
+	}
+	if ips := localIPs(); ips != "" {
+		facts["ip_addresses"] = ips
+	}
 	return facts
+}
+
+// primaryIP is the source address the kernel picks for the server: a UDP
+// "connect" resolves the route without sending a packet.
+func primaryIP(serverURL string) string {
+	u, err := url.Parse(serverURL)
+	if err != nil || u.Hostname() == "" {
+		return ""
+	}
+	port := u.Port()
+	if port == "" {
+		port = "80"
+		if u.Scheme == "https" {
+			port = "443"
+		}
+	}
+	dialer := net.Dialer{Timeout: 3 * time.Second}
+	conn, err := dialer.Dial("udp", net.JoinHostPort(u.Hostname(), port))
+	if err != nil {
+		return ""
+	}
+	defer conn.Close()
+	if addr, ok := conn.LocalAddr().(*net.UDPAddr); ok {
+		return addr.IP.String()
+	}
+	return ""
+}
+
+// localIPs lists the global unicast addresses of all interfaces that are up.
+func localIPs() string {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return ""
+	}
+	var ips []string
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			ipNet, ok := addr.(*net.IPNet)
+			if !ok || !ipNet.IP.IsGlobalUnicast() {
+				continue
+			}
+			ips = append(ips, ipNet.IP.String())
+		}
+	}
+	return strings.Join(ips, ", ")
 }

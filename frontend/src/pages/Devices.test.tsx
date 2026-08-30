@@ -14,6 +14,7 @@ function device(overrides: Partial<DeviceSummary>): DeviceSummary {
     online: true,
     agentVersion: '1.0.0',
     lastContactAt: new Date().toISOString(),
+    ip: '192.168.1.20',
     lastIp: '10.0.0.5',
     lastJobAt: null,
     enrolledAt: new Date().toISOString(),

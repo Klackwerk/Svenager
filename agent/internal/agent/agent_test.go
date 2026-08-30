@@ -36,10 +36,24 @@ func TestNextDelayBacksOffExponentiallyAndCaps(t *testing.T) {
 }
 
 func TestCollectFactsHasCoreKeys(t *testing.T) {
-	facts := collectFacts()
+	facts := collectFacts("")
 	for _, key := range []string{"os", "arch", "hostname"} {
 		if facts[key] == "" {
 			t.Errorf("fact %q missing", key)
 		}
+	}
+	if _, present := facts["ip"]; present {
+		t.Errorf("no server URL must not yield a primary ip, got %q", facts["ip"])
+	}
+}
+
+func TestPrimaryIPUsesLocalRoute(t *testing.T) {
+	// Loopback is always routable, so the source address is loopback too.
+	ip := primaryIP("http://127.0.0.1:9")
+	if ip != "127.0.0.1" {
+		t.Errorf("primaryIP = %q, want 127.0.0.1", ip)
+	}
+	if primaryIP("not a url") != "" || primaryIP("") != "" {
+		t.Errorf("unparseable server URLs must yield no ip")
 	}
 }

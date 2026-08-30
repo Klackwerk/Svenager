@@ -47,6 +47,25 @@ class CheckinServiceSpec extends Specification implements ServiceUnitTest<Checki
         result.job == null
     }
 
+    void "checkin keeps the reported and the observed address apart"() {
+        given:
+        Device d = device()
+
+        when:
+        service.checkin(d, '0.1.0', [ip: '192.168.1.20', ip_addresses: '192.168.1.20, fd00::1'], '203.0.113.7')
+
+        then:
+        d.ip == '192.168.1.20'
+        d.lastIp == '203.0.113.7'
+
+        when: 'an older agent reports no address'
+        service.checkin(d, '0.0.9', [hostname: 'kiosk-01'], '203.0.113.8')
+
+        then: 'the last reported one is kept'
+        d.ip == '192.168.1.20'
+        d.lastIp == '203.0.113.8'
+    }
+
     void "online detection uses the poll interval threshold"() {
         expect:
         service.isOnline(device(lastContactAt: new Date()))

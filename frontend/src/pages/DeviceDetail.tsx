@@ -247,7 +247,13 @@ export default function DeviceDetail() {
                   </tr>
                   <tr>
                     <th scope="row">IP address</th>
-                    <td>{device.lastIp ? <code>{device.lastIp}</code> : '—'}</td>
+                    <td>{device.ip ? <code>{device.ip}</code> : '—'}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Seen from</th>
+                    <td title="Source address of the last check-in as seen by the server">
+                      {device.lastIp ? <code>{device.lastIp}</code> : '—'}
+                    </td>
                   </tr>
                   <tr>
                     <th scope="row">Agent version</th>

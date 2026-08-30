@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Golden-image script for clonable Raspberry Pi SD cards.
 - Job details and logs open in a dialog
 - Navigation moved to a left sidebar with grouped sections and icons.
 - Expert details switch and theme live in the account menu; the job page explains what it hides.

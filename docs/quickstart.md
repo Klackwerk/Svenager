@@ -86,6 +86,22 @@ service and enrolls. The device appears on
 the dashboard, checks in periodically over outbound HTTPS and applies its
 assigned configuration with Ansible running locally.
 
+### Many Raspberry Pis from one SD card
+
+Set up one Pi as a golden image with
+[`scripts/pi-golden-image.sh`](../scripts/pi-golden-image.sh):
+
+```sh
+sudo ./pi-golden-image.sh --server https://svenager.example.org --shutdown
+```
+
+It installs the agent in token-less mode and seals the card: agent identity,
+`/etc/machine-id`, SSH host keys and DHCP identity are removed. Image the
+card and boot the clones — each one regenerates its identity on first boot,
+names itself `pi-<serial>` (`--hostname-prefix` changes `pi`) and shows up
+under **Enrollment → Requests** where you approve it. Re-run the script with
+`--seal-only` after changing the master before imaging again.
+
 ## Where to go next
 
 - Assign groups, variables and roles to devices in the web UI.
